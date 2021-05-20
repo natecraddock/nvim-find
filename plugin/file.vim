@@ -5,7 +5,7 @@ endif
 let s:save_cpo = &cpo
 set cpo&vim
 
-command! Find lua require("nvim-find").files()
+command! NvimFindFiles lua require("nvim-find").files()
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
