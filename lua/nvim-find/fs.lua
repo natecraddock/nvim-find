@@ -139,9 +139,6 @@ function fs.walkdir(paths)
 
   local stats = walk(paths, cb)
 
-  -- TODO: Remove this
-  print("Found " .. stats.count .. " files")
-
   return list
 end
 
