@@ -1,6 +1,7 @@
 local finder = require("nvim-find.finder")
 local fs = require("nvim-find.fs")
 local path = require("nvim-find.path")
+local set = require("nvim-find.set")
 local str = require("nvim-find.string-utils")
 
 local files = {}
@@ -54,23 +55,20 @@ function source:get()
   return self.list
 end
 
-local Index = {
-  data = {}
-}
+local Index = { }
 
 function Index:new()
-  local index = { data = {} }
+  local index = {}
   setmetatable(index, self)
   self.__index = self
   return index
 end
 
 function Index:add(key, value)
-  if self.data[key] then
-    self.data[key][value] = 1
+  if self[key] then
+    self[key].add(value)
   else
-    -- TODO: replace with set
-    self.data[key] = { [value] = 1 }
+    self[key] = set:new({ value })
   end
 end
 
@@ -87,7 +85,7 @@ function Index:find(key, sloppy)
   end
 
   local matches = {}
-  for k, v in pairs(self.data) do
+  for k, v in pairs(self) do
     if finder(k) then
       for p, _ in pairs(v) do
         table.insert(matches, p)
