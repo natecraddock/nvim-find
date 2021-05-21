@@ -1,18 +1,16 @@
 -- Path functions
 
+local fs = require('nvim-find.fs')
 local str = require("nvim-find.string-utils")
 
 local path = {}
-
--- TODO: Handle path separator differences on different OS
 
 -- Return the basename of a path
 -- If the path ends in a file, the name is returned
 -- If the path ends in a directory followed by a separator then
 -- the final directory is returned.
 function path.basename(path_str)
-  -- TODO: Split on fs.sep
-  local parts = str.split(path_str, "/")
+  local parts = str.split(path_str, fs.sep)
   return parts[#parts]
 end
 

@@ -76,7 +76,7 @@ end
 
 local function shouldignore(path, ignored, type)
   return false
-  -- if type == "directory" then path = path .. "/" end
+  -- if type == "directory" then path = path .. fs.sep end
   -- for pattern, _ in pairs(ignored) do
   --   if path:sub(2):match(pattern) then
   --     -- print(vim.inspect({path, pattern}))
