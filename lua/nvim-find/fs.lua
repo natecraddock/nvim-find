@@ -5,7 +5,7 @@ local uv = vim.loop
 local fs = {}
 
 local Set = require("nvim-find.set")
-require("nvim-find.string-utils")
+local str = require("nvim-find.string-utils")
 
 -- System-specific path separator
 fs.sep = package.path:sub(1, 1)
@@ -48,7 +48,7 @@ end
 local function read_gitignore(gitignore)
   local patterns = Set:new()
   gitignore:gsub("\r", "")
-  local lines = gitignore:split("\n")
+  local lines = str.split(gitignore, "\n")
   for _, line in ipairs(lines) do
     -- Ignore blanks and comments
     if line == "" or line:sub(1, 1) == "#" then

@@ -2,7 +2,7 @@
 -- Contains the generic code used to manage each type of finder
 
 local state = require("nvim-find.state")
-require("nvim-find.string-utils")
+local str = require("nvim-find.string-utils")
 
 local Finder = {
   source = nil,
@@ -224,8 +224,7 @@ end
 local function get_prompt(buffer)
   local line = api.nvim_buf_get_lines(buffer, 0, 1, false)[1]
   -- Trim off the prompt char and remove leading and trailing whitespace
-  line = line:sub(3):trim()
-  return line
+  return str.trim(line:sub(3))
 end
 
 function Finder:search()

@@ -1,6 +1,7 @@
 local finder = require("nvim-find.finder")
 local fs = require("nvim-find.fs")
 local path = require("nvim-find.path")
+local str = require("nvim-find.string-utils")
 
 local files = {}
 
@@ -126,7 +127,7 @@ function filter:run(input, query)
   end
 
   -- Split query into tokens
-  query = query:split()
+  query = str.split(query)
 
   local matches = {}
   for i, token in ipairs(query) do

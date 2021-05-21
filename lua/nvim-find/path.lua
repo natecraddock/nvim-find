@@ -1,6 +1,6 @@
 -- Path functions
 
-require("nvim-find.string-utils")
+local str = require("nvim-find.string-utils")
 
 local path = {}
 
@@ -11,7 +11,8 @@ local path = {}
 -- If the path ends in a directory followed by a separator then
 -- the final directory is returned.
 function path.basename(path_str)
-  local parts = path_str:split("/")
+  -- TODO: Split on fs.sep
+  local parts = str.split(path_str, "/")
   return parts[#parts]
 end
 
@@ -23,7 +24,7 @@ function path.splitext(name)
     return name, ""
   end
 
-  local parts = name:split("%.")
+  local parts = str.split(name, "%.")
   return parts[1], parts[2]
 end
 
