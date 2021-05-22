@@ -108,6 +108,10 @@ local function set_mapping(buffer, key, action_num, options)
   api.nvim_buf_set_keymap(buffer, "i", key, rhs, options)
 end
 
+local function set_autocommand(event, buffer, action_num)
+  api.nvim_command(string.format("autocmd %s <buffer=%s> :lua require('nvim-find.state').run_mapping(%s)", event, buffer, action_num))
+end
+
 -- Set the autocommands and keybindings for the finder
 function Finder:set_actions(buffer)
   local options = { nowait = true, silent = true, noremap = true }
@@ -119,6 +123,12 @@ function Finder:set_actions(buffer)
     { key = "<c-k>", type = "", callback = function() self:move_cursor('up') end },
     { key = "<c-n>", type = "", callback = function() self:move_cursor('down') end },
     { key = "<c-p>", type = "", callback = function() self:move_cursor('up') end },
+  }
+
+  local default_autocommands = {
+    { event = "BufLeave", callback = function() self:close(true) end },
+    { event = "InsertLeave", callback = function() self:close(true) end },
+    { event = "TextChangedI", callback = function() self:search() end },
   }
 
   local action_num = 1
@@ -134,10 +144,11 @@ function Finder:set_actions(buffer)
     action_num = action_num + 1
   end
 
-  -- TODO: use .run_mapping() so fewer functions are exposed to global api
-  api.nvim_command('autocmd BufLeave <buffer> :lua require("nvim-find.state").close(true)')
-  api.nvim_command('autocmd InsertLeave <buffer> :lua require("nvim-find.state").close(true)')
-  api.nvim_command("autocmd TextChangedI <buffer> :lua require('nvim-find.state').search()")
+  for _, action in ipairs(default_autocommands) do
+    self.action_map[action_num] = { type = "", callback = action.callback }
+    set_autocommand(action.event, buffer, action_num)
+    action_num = action_num + 1
+  end
 end
 
 function Finder:open()
