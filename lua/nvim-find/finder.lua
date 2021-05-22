@@ -4,6 +4,8 @@
 local state = require("nvim-find.state")
 local str = require("nvim-find.string-utils")
 
+local api = vim.api
+
 local Finder = {
   source = nil,
   filter = nil,
@@ -27,8 +29,6 @@ local Finder = {
     selected = 0,
   },
 }
-
-local api = vim.api
 
 -- Create a new popup given a row, column, width, and height
 -- Returns the created buffer and window in a table
@@ -173,7 +173,6 @@ function Finder:open()
   self.action_map = {}
   self:set_actions(prompt.buffer)
 
-  -- TODO: Encapsulate this better
   self.prompt.buffer = prompt.buffer
   self.prompt.window = prompt.window
 
