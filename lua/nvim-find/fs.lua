@@ -75,15 +75,13 @@ local function setignore(path, ignored)
 end
 
 local function shouldignore(path, ignored, type)
+  if type == "directory" then path = path .. fs.sep end
+  for pattern, _ in pairs(ignored) do
+    if path:sub(2):match(pattern) then
+      return true
+    end
+  end
   return false
-  -- if type == "directory" then path = path .. fs.sep end
-  -- for pattern, _ in pairs(ignored) do
-  --   if path:sub(2):match(pattern) then
-  --     -- print(vim.inspect({path, pattern}))
-  --     return true
-  --   end
-  -- end
-  -- return false
 end
 
 -- Walk a set of paths and execute a callback at each file.

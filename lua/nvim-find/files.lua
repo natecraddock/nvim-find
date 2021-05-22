@@ -45,7 +45,7 @@ function source:find_files()
     self:watch_paths()
   end
 
-  self.list = self:file_finder()
+  self.list = self.file_finder()
 end
 
 function source:get()
