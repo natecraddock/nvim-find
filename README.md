@@ -83,6 +83,7 @@ Key | Mapping
 <kbd>enter</kbd>  | open selected file in last used buffer
 <kbd>ctrl-v</kbd> | split vertically and open selected file
 <kbd>ctrl-s</kbd> | split horizontally and open selected file
+<kbd>ctrl-t</kbd> | open selected file in a new tab
 
 # Roadmap
 

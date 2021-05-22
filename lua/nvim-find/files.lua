@@ -164,6 +164,7 @@ local events = {
   { key = "<cr>", type = "select", callback = function(selected) open_file(selected) end },
   { key = "<c-s>", type = "select", callback = function(selected) open_file(selected, "split") end },
   { key = "<c-v>", type = "select", callback = function(selected) open_file(selected, "vsplit") end },
+  { key = "<c-t>", type = "select", callback = function(selected) open_file(selected, "tabedit") end },
 }
 
 function files.open()
