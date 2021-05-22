@@ -6,6 +6,22 @@ local str = require("nvim-find.string-utils")
 
 local api = vim.api
 
+local finder = {}
+
+-- Default filter for finders
+
+finder.filter = {}
+
+function finder.filter:run(input, query)
+  local matches = {}
+  for _, entry in ipairs(input) do
+    if string.find(entry, query, 1, true) then
+      table.insert(matches, entry)
+    end
+  end
+  return matches
+end
+
 local Finder = {
   source = nil,
   filter = nil,
@@ -56,26 +72,23 @@ function Finder:new(opts)
     error("opts must not be nil")
   end
 
-  local finder = {}
+  local f = {}
   self.__index = self
-  setmetatable(finder, self)
+  setmetatable(f, self)
 
   if not opts.source then
     error("opts must contain a source")
   end
-  finder.source = opts.source
+  f.source = opts.source
 
-  if not opts.filter then
-    error("opts must contain a filter")
-  end
-  finder.filter = opts.filter
+  f.filter = opts.filter or finder.filter
 
   if not opts.events then
     error("opts must contain events")
   end
-  finder.events = opts.events
+  f.events = opts.events
 
-  return finder
+  return f
 end
 
 local function get_finder_dimensions()
@@ -276,4 +289,6 @@ function Finder:select(callback)
   callback(selected)
 end
 
-return Finder
+finder.Finder = Finder
+
+return finder

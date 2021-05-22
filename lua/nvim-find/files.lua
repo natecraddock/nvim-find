@@ -83,7 +83,7 @@ function Index:find(key, sloppy)
       return string.find(a:gsub("[-_.]", ""), key, 1, true)
     end
   else
-    finder = function(a, b)
+    finder = function(a)
       return string.find(a, key, 1, true)
     end
   end
@@ -170,7 +170,7 @@ local events = {
 function files.open()
   -- Create the finder on the first run
   if not files_finder then
-    files_finder = finder:new({
+    files_finder = finder.Finder:new({
       source = source,
       filter = filter,
       events = events,
