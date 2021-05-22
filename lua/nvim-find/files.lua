@@ -55,20 +55,24 @@ function source:get()
   return self.list
 end
 
-local Index = { }
+local Index = {
+  data = {}
+}
 
 function Index:new()
-  local index = {}
+  local index = {
+    data = {}
+  }
   setmetatable(index, self)
   self.__index = self
   return index
 end
 
 function Index:add(key, value)
-  if self[key] then
-    self[key]:add(value)
+  if self.data[key] then
+    self.data[key]:add(value)
   else
-    self[key] = set:new({ value })
+    self.data[key] = set:new({ value })
   end
 end
 
@@ -85,7 +89,7 @@ function Index:find(key, sloppy)
   end
 
   local matches = {}
-  for k, v in pairs(self) do
+  for k, v in pairs(self.data) do
     if finder(k) then
       for p, _ in pairs(v) do
         table.insert(matches, p)
