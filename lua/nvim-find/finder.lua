@@ -9,8 +9,8 @@ local api = vim.api
 local Finder = {
   source = nil,
   filter = nil,
-  actions = nil,
-  action_map = {},
+  events = nil,
+  event_map = {},
   state = {
     closed = nil,
     previous_window = nil,
@@ -70,10 +70,10 @@ function Finder:new(opts)
   end
   finder.filter = opts.filter
 
-  if not opts.actions then
-    error("opts must contain actions")
+  if not opts.events then
+    error("opts must contain events")
   end
-  finder.actions = opts.actions
+  finder.events = opts.events
 
   return finder
 end
@@ -95,59 +95,58 @@ local function get_finder_dimensions()
 end
 
 function Finder:run_mapping(map)
-  local mapping = self.action_map[map]
-  if mapping.type == "accept" then
-    self:accept(mapping.callback)
-  elseif mapping.type == "" then
+  local mapping = self.event_map[map]
+  if mapping.type == "select" then
+    self:select(mapping.callback)
+  else
     mapping.callback()
   end
 end
 
-local function set_mapping(buffer, key, action_num, options)
-  local rhs = string.format("<cmd>:lua require('nvim-find.state').run_mapping(%s)<cr>", action_num)
+local function set_mapping(buffer, key, event_num, options)
+  local rhs = string.format("<cmd>:lua require('nvim-find.state').run_mapping(%s)<cr>", event_num)
   api.nvim_buf_set_keymap(buffer, "i", key, rhs, options)
 end
 
-local function set_autocommand(event, buffer, action_num)
-  api.nvim_command(string.format("autocmd %s <buffer=%s> :lua require('nvim-find.state').run_mapping(%s)", event, buffer, action_num))
+local function set_autocommand(event, buffer, event_num)
+  local cmd = string.format("autocmd %s <buffer=%s> :lua require('nvim-find.state').run_mapping(%s)",
+                            event,
+                            buffer,
+                            event_num)
+  api.nvim_command(cmd)
 end
 
 -- Set the autocommands and keybindings for the finder
-function Finder:set_actions(buffer)
+function Finder:set_events(buffer)
   local options = { nowait = true, silent = true, noremap = true }
 
-  local default_actions = {
-    { key = "<esc>", type = "", callback = function() self:close(true) end },
-    { key = "<c-c>", type = "", callback = function() self:close(true) end },
-    { key = "<c-j>", type = "", callback = function() self:move_cursor('down') end },
-    { key = "<c-k>", type = "", callback = function() self:move_cursor('up') end },
-    { key = "<c-n>", type = "", callback = function() self:move_cursor('down') end },
-    { key = "<c-p>", type = "", callback = function() self:move_cursor('up') end },
-  }
-
-  local default_autocommands = {
+  local default_events = {
+    { key = "<esc>", callback = function() self:close(true) end },
+    { key = "<c-c>", callback = function() self:close(true) end },
+    { key = "<c-j>", callback = function() self:move_cursor('down') end },
+    { key = "<c-k>", callback = function() self:move_cursor('up') end },
+    { key = "<c-n>", callback = function() self:move_cursor('down') end },
+    { key = "<c-p>", callback = function() self:move_cursor('up') end },
     { event = "BufLeave", callback = function() self:close(true) end },
     { event = "InsertLeave", callback = function() self:close(true) end },
     { event = "TextChangedI", callback = function() self:search() end },
   }
 
-  local action_num = 1
-  for _, action in ipairs(default_actions) do
-    self.action_map[action_num] = { type = action.type, callback = action.callback }
-    set_mapping(buffer, action.key, action_num, options)
-    action_num = action_num + 1
+  local event_num = 1
+  for _, event in ipairs(default_events) do
+    self.event_map[event_num] = event
+    if event.key then
+      set_mapping(buffer, event.key, event_num, options)
+    elseif event.event then
+      set_autocommand(event.event, buffer, event_num)
+    end
+    event_num = event_num + 1
   end
 
-  for _, action in ipairs(self.actions) do
-    self.action_map[action_num] = { type = action.type, callback = action.callback }
-    set_mapping(buffer, action.key, action_num, options)
-    action_num = action_num + 1
-  end
-
-  for _, action in ipairs(default_autocommands) do
-    self.action_map[action_num] = { type = "", callback = action.callback }
-    set_autocommand(action.event, buffer, action_num)
-    action_num = action_num + 1
+  for _, event in ipairs(self.events) do
+    self.event_map[event_num] = event
+    set_mapping(buffer, event.key, event_num, options)
+    event_num = event_num + 1
   end
 end
 
@@ -170,8 +169,8 @@ function Finder:open()
   api.nvim_buf_set_option(prompt.buffer, "buftype", "prompt")
   vim.fn.prompt_setprompt(prompt.buffer, "> ")
 
-  self.action_map = {}
-  self:set_actions(prompt.buffer)
+  self.event_map = {}
+  self:set_events(prompt.buffer)
 
   self.prompt.buffer = prompt.buffer
   self.prompt.window = prompt.window
@@ -261,8 +260,8 @@ function Finder:move_cursor(direction)
   vim.cmd("redraw!")
 end
 
--- Run the action on the current row
-function Finder:accept(callback)
+-- Run the event on the current row
+function Finder:select(callback)
   local row = api.nvim_win_get_cursor(self.results.window)[1]
   local selected = api.nvim_buf_get_lines(self.results.buffer, row - 1, row, false)[1]
 

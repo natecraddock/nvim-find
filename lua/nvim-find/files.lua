@@ -160,10 +160,10 @@ local function open_file(path, split)
   vim.cmd(string.format(":%s %s", command, path))
 end
 
-local actions = {
-  { key = "<cr>", type = "accept", callback = function(selected) open_file(selected) end },
-  { key = "<c-s>", type = "accept", callback = function(selected) open_file(selected, "split") end },
-  { key = "<c-v>", type = "accept", callback = function(selected) open_file(selected, "vsplit") end },
+local events = {
+  { key = "<cr>", type = "select", callback = function(selected) open_file(selected) end },
+  { key = "<c-s>", type = "select", callback = function(selected) open_file(selected, "split") end },
+  { key = "<c-v>", type = "select", callback = function(selected) open_file(selected, "vsplit") end },
 }
 
 function files.open()
@@ -172,7 +172,7 @@ function files.open()
     files_finder = finder:new({
       source = source,
       filter = filter,
-      actions = actions,
+      events = events,
     })
   end
 
