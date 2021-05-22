@@ -66,7 +66,7 @@ end
 
 function Index:add(key, value)
   if self[key] then
-    self[key].add(value)
+    self[key]:add(value)
   else
     self[key] = set:new({ value })
   end
