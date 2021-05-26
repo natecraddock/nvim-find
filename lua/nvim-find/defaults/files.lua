@@ -37,7 +37,7 @@ end
 
 function source:find_files()
   if not self.file_finder then
-    if vim.fn.executable("fd") then
+    if vim.fn.executable("fd") ~= 0 then
       self.file_finder = function() return vim.fn.systemlist("fd -t f") end
     else
       self.file_finder = fs.walkdir
