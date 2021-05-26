@@ -51,6 +51,7 @@ local Finder = {
 local function create_popup(options)
   local buffer = api.nvim_create_buf(false, true)
   api.nvim_buf_set_option(buffer, "bufhidden", "wipe")
+  api.nvim_buf_set_option(buffer, "buflisted", false)
 
   local opts = {
     style = "minimal",
@@ -164,7 +165,11 @@ function Finder:set_events(buffer)
 end
 
 function Finder:open()
-  self.results.all = self.source:get()
+  if type(self.source) == "function" then
+    self.results.all = self.source()
+  else
+    self.results.all = self.source:get()
+  end
 
   local dimensions = get_finder_dimensions()
   state.finder = self

@@ -1,4 +1,4 @@
-local find_file = require("nvim-find.files")
+local find_file = require("nvim-find.defaults.files")
 
 local nvim_find = {}
 
