@@ -4,6 +4,7 @@ local uv = vim.loop
 
 local fs = {}
 
+local config = require("nvim-find.config")
 local Set = require("nvim-find.set")
 local str = require("nvim-find.string-utils")
 
@@ -61,6 +62,7 @@ local function read_gitignore(gitignore)
   return patterns
 end
 
+-- TODO: Finish gitignore support and fall back on ignore paths
 local function setignore(path, ignored)
   -- Merge the two tables
   local gitignore_path = path .. fs.sep .. ".gitignore"
@@ -74,10 +76,10 @@ local function setignore(path, ignored)
   return { path = path, ignored = ignored }
 end
 
-local function shouldignore(path, ignored, type)
-  if type == "directory" then path = path .. fs.sep end
-  for pattern, _ in pairs(ignored) do
-    if path:sub(2):match(pattern) then
+local function shouldignore(name)
+  local ignore = config.get("ignore")
+  for _, ignorename in ipairs(ignore) do
+    if name == ignorename then
       return true
     end
   end
@@ -93,24 +95,24 @@ local function walk(paths, callback)
   -- and any directories to be ignored
   local unvisited = {}
   for _, path in ipairs(paths) do
-    table.insert(unvisited, setignore(path, Set:new()))
+    table.insert(unvisited, path)
     callback(path, "directory")
   end
 
   repeat
     local dir = table.remove(unvisited, 1)
-    local current_dir = uv.fs_scandir(dir.path)
+    local current_dir = uv.fs_scandir(dir)
     if current_dir then
       while true do
         local name, type = uv.fs_scandir_next(current_dir)
         if name == nil then break end
 
-        local path = dir.path .. fs.sep .. name
+        local path = dir .. fs.sep .. name
 
         -- Check if this should be ignored
-        if not shouldignore(path, dir.ignored, type) then
+        if not shouldignore(name) then
           if type == "directory" then
-            table.insert(unvisited, setignore(path, dir.ignored))
+            table.insert(unvisited, path)
             callback(path, type)
           else
             callback(path, type)
