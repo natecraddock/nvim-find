@@ -9,7 +9,18 @@ local Set = require("nvim-find.set")
 local str = require("nvim-find.string-utils")
 
 -- System-specific path separator
-fs.sep = package.path:sub(1, 1)
+fs.sep = (function()
+  if jit then
+    local os = string.lower(jit.os)
+    if os == "linux" or os == "osx" or os == "bsd" then
+      return "/"
+    else
+      return "\\"
+    end
+  else
+    return package.config:sub(1, 1)
+  end
+end)()
 
 --[[
 -- It seems like doing .gitignore parsing on large (n > 100000) projects is very computationally
