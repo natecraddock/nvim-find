@@ -187,9 +187,6 @@ function Finder:open()
   api.nvim_buf_set_option(prompt.buffer, "buftype", "prompt")
   vim.fn.prompt_setprompt(prompt.buffer, "> ")
 
-  self.event_map = {}
-  self:set_events(prompt.buffer)
-
   self.prompt.buffer = prompt.buffer
   self.prompt.window = prompt.window
 
@@ -213,6 +210,13 @@ function Finder:open()
   api.nvim_set_current_win(prompt.window)
   -- TODO: This triggers search
   vim.cmd [[startinsert!]]
+
+  -- Must set keymappings and autocommands after creating all buffers
+  -- otherwise the BufLeave autocommand would trigger when creating the
+  -- results window, and then later attempts to modify the prompt window
+  -- had a chance of failing if the prompt window had already been removed.
+  self.event_map = {}
+  self:set_events(prompt.buffer)
 end
 
 -- Used to close the prompt and results windows if they are open.
