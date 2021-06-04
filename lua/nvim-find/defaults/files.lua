@@ -91,7 +91,7 @@ function Index:find(key, sloppy)
   local matches = {}
   for k, v in pairs(self.data) do
     if finder(k) then
-      for p, _ in pairs(v) do
+      for p, _ in pairs(v.items) do
         table.insert(matches, p)
       end
     end

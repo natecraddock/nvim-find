@@ -1,12 +1,14 @@
 -- A set-like wrapper around tables
 
-local Set = {}
+local Set = {
+  items = {}
+}
 
 function Set:new(list)
-  local set = {}
+  local set = { items = {} }
   if list then
     for _, value in ipairs(list) do
-      set[value] = 1
+      set.items[value] = 1
     end
   end
   setmetatable(set, self)
@@ -15,11 +17,11 @@ function Set:new(list)
 end
 
 function Set:add(item)
-  self[item] = 1
+  self.items[item] = 1
 end
 
 function Set:contains(item)
-  return self[item] ~= nil
+  return self.items[item] ~= nil
 end
 
 function Set:union(other)
