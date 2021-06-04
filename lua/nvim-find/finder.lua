@@ -9,10 +9,7 @@ local api = vim.api
 local finder = {}
 
 -- Default filter for finders
-
-finder.filter = {}
-
-function finder.filter:run(input, query)
+local function basic_filter(input, query)
   local matches = {}
   for _, entry in ipairs(input) do
     if string.find(entry, query, 1, true) then
@@ -82,7 +79,7 @@ function Finder:new(opts)
   end
   f.source = opts.source
 
-  f.filter = opts.filter or finder.filter
+  f.filter = opts.filter or basic_filter
 
   if not opts.events then
     error("opts must contain events")
@@ -165,11 +162,7 @@ function Finder:set_events(buffer)
 end
 
 function Finder:open()
-  if type(self.source) == "function" then
-    self.results.all = self.source()
-  else
-    self.results.all = self.source:get()
-  end
+  self.results.all = self.source()
 
   local dimensions = get_finder_dimensions()
   state.finder = self
@@ -260,7 +253,7 @@ end
 
 function Finder:search()
   local query = get_prompt(self.prompt.buffer)
-  self.results.filtered = self.filter:run(self.results.all, query)
+  self.results.filtered = self.filter(self.results.all, query)
   api.nvim_buf_set_lines(self.results.buffer, 0, self.results.length, false, self.results.filtered)
   api.nvim_win_set_cursor(self.results.window, { 1, 0 })
   self.results.length = #self.results.filtered

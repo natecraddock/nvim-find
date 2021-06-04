@@ -55,6 +55,10 @@ function source:get()
   return self.list
 end
 
+local function get_source()
+  return source:get()
+end
+
 local Index = {
   data = {}
 }
@@ -152,6 +156,10 @@ function filter:run(input, query)
   return matches_flattened
 end
 
+local function file_filter(input, query)
+  return filter:run(input, query)
+end
+
 local files_finder = nil
 
 local function open_file(path, split)
@@ -171,8 +179,8 @@ function files.open()
   -- Create the finder on the first run
   if not files_finder then
     files_finder = finder.Finder:new({
-      source = source,
-      filter = filter,
+      source = get_source,
+      filter = file_filter,
       events = events,
     })
   end
