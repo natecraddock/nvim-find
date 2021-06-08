@@ -17,7 +17,7 @@ local function parse_vimgrep_line(grep_line)
     path = filepath,
     row = tonumber(row),
     col = tonumber(column),
-    match = " │ " .. str.trim(match),
+    match = str.trim(match),
   }
 end
 
@@ -50,11 +50,11 @@ local function filter(_, query, callback)
 
     local display = {}
     for p, l in pairs(index) do
-      table.insert(line_index, {path = p, row = 1, col = 1})
+      table.insert(line_index, {path = p, row = 1, col = 1, ignore = true})
       table.insert(display, path.basename(p) .. " (" .. p .. ")")
       for _, m in ipairs(l) do
-        table.insert(line_index, {path = p, row = m.row, col = m.col})
-        table.insert(display, m.match)
+        table.insert(line_index, {path = p, row = m.row, col = m.col, text=m.match})
+        table.insert(display, " │ " .. m.match)
       end
     end
 
@@ -85,7 +85,6 @@ end
 
 local loaded_buffers = {}
 local function preview(index, window, buffer)
-
   local line = line_index[index]
 
   if loaded_buffers[line.path] == nil then
@@ -100,11 +99,38 @@ local function preview(index, window, buffer)
   end)
 end
 
+local function open_file(line, split)
+  local command = "edit"
+  if split then command = split end
+  vim.cmd(string.format(":%s +%s %s", command, line.row, line.path))
+end
+
+local function fill_quickfix()
+  local qfitems = {}
+  for _, result in ipairs(line_index) do
+    if not result.ignore then
+      table.insert(qfitems, {filename=result.path, lnum=result.row, col=result.col, text=result.text})
+    end
+  end
+  vim.fn.setqflist(qfitems)
+end
+
+local function select(row, split)
+  local line = line_index[row]
+
+  if cursor_mode then
+    open_file(line, split)
+    return
+  end
+
+  fill_quickfix()
+end
+
 local events = {
-  { key = "<cr>", type = "select", callback = function() end },
-  { key = "<c-s>", type = "select", callback = function() end },
-  { key = "<c-v>", type = "select", callback = function() end },
-  { key = "<c-t>", type = "select", callback = function() end },
+  { key = "<cr>", type = "select", callback = function(_, row) select(row) end },
+  { key = "<c-s>", type = "select", callback = function(_, row) select(row, "split") end },
+  { key = "<c-v>", type = "select", callback = function(_, row) select(row, "vsplit") end },
+  { key = "<c-t>", type = "select", callback = function(_, row) select(row, "tabedit") end },
   { type = "move_cursor_before", callback = move_cusor },
 }
 

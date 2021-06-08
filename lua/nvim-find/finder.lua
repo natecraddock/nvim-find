@@ -422,7 +422,7 @@ function Finder:select(callback)
   self:close()
   api.nvim_set_current_win(self.state.previous_window)
 
-  callback(selected)
+  callback(selected, row)
 end
 
 finder.Finder = Finder
