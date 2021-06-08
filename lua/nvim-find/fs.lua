@@ -37,13 +37,18 @@ local function exists(path)
   return not vim.tbl_isempty(stats)
 end
 
-local function read(path)
+function fs.read(path)
   local fd = assert(uv.fs_open(path, "r", 438))
   local stat = assert(uv.fs_fstat(fd))
   local data = assert(uv.fs_read(fd, stat.size, 0))
   assert(uv.fs_close(fd))
 
   return data
+end
+
+function fs.readlines(file)
+  file:gsub("\r", "")
+  return str.split(file, "\n")
 end
 
 local function escape_pattern(pattern)

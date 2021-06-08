@@ -1,3 +1,4 @@
+-- TODO: this can be moved to finder.lua
 local state = {
   finder = nil
 }

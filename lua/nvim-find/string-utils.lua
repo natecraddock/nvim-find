@@ -22,6 +22,21 @@ function string_utils.split(str, split_char)
   return parts
 end
 
+-- Join the elements of the table delimited by str.
+function string_utils.join(str, list)
+  local result = ""
+  if #list == 1 then
+    return list[1]
+  end
+
+  result = list[1]
+  for i = 2,#list do
+    result = result .. str .. list[i]
+  end
+
+  return result
+end
+
 -- Returns a string with whitespace trimmed from the front and end of
 -- the string.
 function string_utils.trim(str)
