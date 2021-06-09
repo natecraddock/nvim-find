@@ -47,6 +47,11 @@ local Finder = {
     buffer = nil,
     window = nil,
   },
+  label = {
+    prompt_str = "> ",
+    buffer = nil,
+    window = nil,
+  },
   callback = false,
 }
 
@@ -103,6 +108,10 @@ function Finder:new(opts)
   end
 
   f.callback = opts.callback ~= nil
+
+  if opts.prompt_str then
+    f.label.prompt_str = opts.prompt_str
+  end
 
   f.prompt.query = ""
   f.results.all = nil
@@ -211,9 +220,23 @@ function Finder:set_events(buffer)
 end
 
 function Finder:_open_popups(dimensions)
-  local prompt = create_popup({
+  local label_width = #self.label.prompt_str
+
+  local label = create_popup({
     row = 0,
     col = dimensions.column,
+    width = label_width,
+    height = 1,
+  })
+
+  self.label.buffer = label.buffer
+  self.label.window = label.window
+
+  api.nvim_buf_set_lines(label.buffer, 0, 1, false, { self.label.prompt_str })
+
+  local prompt = create_popup({
+    row = 0,
+    col = dimensions.column + label_width,
     width = dimensions.width,
     height = 1,
   })
@@ -222,7 +245,7 @@ function Finder:_open_popups(dimensions)
   self.prompt.window = prompt.window
 
   if self.prompt.query ~= "" then
-    api.nvim_buf_set_lines(self.prompt.buffer, 0, 1, false, {self.prompt.query})
+    api.nvim_buf_set_lines(self.prompt.buffer, 0, 1, false, { self.prompt.query })
   end
 
   local results = create_popup({
@@ -284,6 +307,7 @@ function Finder:open_preview()
   self.state.swapping = true
 
   -- Close all windows
+  self:_close_popup("label")
   self:_close_popup("prompt")
   self:_close_popup("results")
   self:_close_popup("preview")
@@ -315,6 +339,7 @@ function Finder:close_preview()
   self.state.swapping = true
 
   -- Close all windows
+  self:_close_popup("label")
   self:_close_popup("prompt")
   self:_close_popup("results")
   self:_close_popup("preview")
@@ -338,6 +363,8 @@ function Finder:close(cancel)
   if self.state.closed then return end
   self.state.closed = true
 
+  -- Close all windows
+  self:_close_popup("label")
   self:_close_popup("prompt")
   self:_close_popup("results")
   self:_close_popup("preview")
