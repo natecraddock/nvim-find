@@ -1,7 +1,6 @@
 -- finder.lua
 -- Contains the generic code used to manage each type of finder
 
-local state = require("nvim-find.state")
 local str = require("nvim-find.string-utils")
 
 local api = vim.api
@@ -149,6 +148,17 @@ local function get_finder_dimensions(preview_enabled)
   }
 end
 
+-- To store the active finder for mappings and autocommands
+local state = {
+  finder = nil
+}
+
+-- Entry point to running a mapping from mappings and autocommands
+function finder.run_mapping(map)
+  if not state.finder then return end
+  state.finder:run_mapping(map)
+end
+
 function Finder:run_mapping(map)
   local mapping = self.event_map[map]
   if mapping.type == "select" then
@@ -159,12 +169,12 @@ function Finder:run_mapping(map)
 end
 
 local function set_mapping(buffer, key, event_num, options)
-  local rhs = string.format("<cmd>:lua require('nvim-find.state').run_mapping(%s)<cr>", event_num)
+  local rhs = string.format("<cmd>:lua require('nvim-find.finder').run_mapping(%s)<cr>", event_num)
   api.nvim_buf_set_keymap(buffer, "i", key, rhs, options)
 end
 
 local function set_autocommand(event, buffer, event_num)
-  local cmd = string.format("autocmd %s <buffer=%s> :lua require('nvim-find.state').run_mapping(%s)",
+  local cmd = string.format("autocmd %s <buffer=%s> :lua require('nvim-find.finder').run_mapping(%s)",
                             event,
                             buffer,
                             event_num)
