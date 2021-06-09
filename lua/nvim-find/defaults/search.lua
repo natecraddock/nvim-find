@@ -120,9 +120,9 @@ local function select(row, split)
 
   if cursor_mode then
     open_file(line, split)
-    return
   end
 
+  -- Always fill the quickfix for usefulness
   fill_quickfix()
 end
 
