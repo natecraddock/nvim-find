@@ -160,8 +160,6 @@ local function file_filter(input, query)
   return filter:run(input, query)
 end
 
-local files_finder = nil
-
 local function open_file(path, split)
   local command = "edit"
   if split then command = split end
@@ -176,16 +174,11 @@ local events = {
 }
 
 function files.open()
-  -- Create the finder on the first run
-  if not files_finder then
-    files_finder = finder.Finder:new({
-      source = get_source,
-      filter = file_filter,
-      events = events,
-    })
-  end
-
-  files_finder:open()
+  finder.create({
+    source = get_source,
+    filter = file_filter,
+    events = events,
+  })
 end
 
 return files

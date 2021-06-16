@@ -1,6 +1,7 @@
 -- finder.lua
 -- Contains the generic code used to manage each type of finder
 
+local mappings = require("nvim-find.mappings")
 local str = require("nvim-find.string-utils")
 
 local api = vim.api
@@ -16,107 +17,6 @@ local function basic_filter(input, query)
     end
   end
   return matches
-end
-
-local Finder = {
-  source = nil,
-  filter = nil,
-  previewer = nil,
-  events = nil,
-  event_map = {},
-  state = {
-    closed = nil,
-    previous_window = nil,
-  },
-  prompt = {
-    buffer = nil,
-    window = nil,
-    query = "",
-  },
-  results = {
-    buffer = nil,
-    window = nil,
-    all = nil,
-    length = 0,
-    filtered = {},
-    selected = 0,
-  },
-  preview = {
-    enabled = false,
-    buffer = nil,
-    window = nil,
-  },
-  label = {
-    prompt_str = "> ",
-    buffer = nil,
-    window = nil,
-  },
-  callback = false,
-}
-
--- Create a new popup given a row, column, width, and height
--- Returns the created buffer and window in a table
-local function create_popup(options)
-  local buffer = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_option(buffer, "bufhidden", "wipe")
-  api.nvim_buf_set_option(buffer, "buflisted", false)
-
-  local opts = {
-    style = "minimal",
-    relative = "editor",
-    row = options.row,
-    col = options.col,
-    width = options.width,
-    height = options.height,
-  }
-
-  local window = api.nvim_open_win(buffer, true, opts)
-
-  return { buffer = buffer, window = window }
-end
-
--- Create a new finder
-function Finder:new(opts)
-  if not opts then
-    error("opts must not be nil")
-  end
-
-  local f = {}
-  self.__index = self
-  setmetatable(f, self)
-
-  if not opts.source then
-    error("opts must contain a source")
-  end
-  f.source = opts.source
-
-  f.filter = opts.filter or basic_filter
-
-  if not opts.events then
-    error("opts must contain events")
-  end
-  f.events = opts.events
-
-  -- TODO: Only enable preview when needed
-  if opts.preview then
-    f.preview.enabled = true
-    f.previewer = opts.preview
-  else
-    f.preview_enabled = false
-    f.previewer = nil
-  end
-
-  f.callback = opts.callback ~= nil
-
-  if opts.prompt_str then
-    f.label.prompt_str = opts.prompt_str
-  end
-
-  f.prompt.query = ""
-  f.results.all = nil
-  f.results.filtered = {}
-
-  return f
 end
 
 local function get_finder_dimensions(preview_enabled)
@@ -148,278 +48,137 @@ local function get_finder_dimensions(preview_enabled)
   }
 end
 
--- To store the active finder for mappings and autocommands
-local state = {
-  finder = nil
-}
+-- Create a new popup given a row, column, width, and height
+-- Returns the created buffer and window in a table
+local function create_popup(row, col, width, height)
+  local buffer = api.nvim_create_buf(false, true)
+  api.nvim_buf_set_option(buffer, "bufhidden", "wipe")
+  api.nvim_buf_set_option(buffer, "buflisted", false)
 
--- Entry point to running a mapping from mappings and autocommands
-function finder.run_mapping(map)
-  if not state.finder then return end
-  state.finder:run_mapping(map)
-end
-
-function Finder:run_mapping(map)
-  local mapping = self.event_map[map]
-  if mapping.type == "select" then
-    self:select(mapping.callback)
-  else
-    mapping.callback()
-  end
-end
-
-local function set_mapping(buffer, key, event_num, options)
-  local rhs = string.format("<cmd>:lua require('nvim-find.finder').run_mapping(%s)<cr>", event_num)
-  api.nvim_buf_set_keymap(buffer, "i", key, rhs, options)
-end
-
-local function set_autocommand(event, buffer, event_num)
-  local cmd = string.format("autocmd %s <buffer=%s> :lua require('nvim-find.finder').run_mapping(%s)",
-                            event,
-                            buffer,
-                            event_num)
-  api.nvim_command(cmd)
-end
-
--- Events not triggered directly by any action
-local function register_event(f, type, callback)
-  if type == "move_cursor_before" then
-    f.move_cursor_before = callback
-  elseif type == "move_cursor_after" then
-    f.move_cursor_after = callback
-  end
-end
-
--- Set the autocommands and keybindings for the finder
-function Finder:set_events(buffer)
-  local options = { nowait = true, silent = true, noremap = true }
-
-  local default_events = {
-    { key = "<esc>", callback = function() self:close(true) end },
-    { key = "<c-c>", callback = function() self:close(true) end },
-    { key = "<c-j>", callback = function() self:move_cursor('down') end },
-    { key = "<c-k>", callback = function() self:move_cursor('up') end },
-    { key = "<c-n>", callback = function() self:move_cursor('down') end },
-    { key = "<c-p>", callback = function() self:move_cursor('up') end },
-    { event = "BufLeave", callback = function() self:close(true) end },
-    { event = "InsertLeave", callback = function() self:close(true) end },
+  local opts = {
+    style = "minimal",
+    relative = "editor",
+    row = row,
+    col = col,
+    width = width,
+    height = height,
   }
 
-  local event_num = 1
-  for _, event in ipairs(default_events) do
-    self.event_map[event_num] = event
-    if event.key then
-      set_mapping(buffer, event.key, event_num, options)
-    elseif event.event then
-      set_autocommand(event.event, buffer, event_num)
+  local window = api.nvim_open_win(buffer, true, opts)
+
+  -- Used to close the window when finished or canceled
+  local close = function()
+    if buffer or window then
+      if window then api.nvim_win_close(window, true) end
     end
-    event_num = event_num + 1
   end
 
-  for _, event in ipairs(self.events) do
-    if event.key then
-      self.event_map[event_num] = event
-      set_mapping(buffer, event.key, event_num, options)
-      event_num = event_num + 1
-    else
-     -- These are probably better as just callbacks passed in?
-      register_event(self, event.type, event.callback)
-    end
-  end
+  return { buffer = buffer, window = window, close = close }
 end
 
-function Finder:_open_popups(dimensions)
-  local label_width = #self.label.prompt_str
+-- Create and open a new finder
+function finder.create(opts)
+  local config = {}
 
-  local label = create_popup({
-    row = 0,
-    col = dimensions.column,
-    width = label_width,
-    height = 1,
-  })
-
-  self.label.buffer = label.buffer
-  self.label.window = label.window
-
-  api.nvim_buf_set_lines(label.buffer, 0, 1, false, { self.label.prompt_str })
-
-  local prompt = create_popup({
-    row = 0,
-    col = dimensions.column + label_width,
-    width = dimensions.width,
-    height = 1,
-  })
-
-  self.prompt.buffer = prompt.buffer
-  self.prompt.window = prompt.window
-
-  if self.prompt.query ~= "" then
-    api.nvim_buf_set_lines(self.prompt.buffer, 0, 1, false, { self.prompt.query })
+  if not opts then
+    error("opts must not be nil")
   end
 
-  -- Register for events
-  api.nvim_buf_attach(self.prompt.buffer, false, { on_lines = function() self:search() end })
+  if not opts.source then
+    error("opts must contain a source")
+  end
+  local source = opts.source
 
-  local results = create_popup({
-    row = 1,
-    col = dimensions.column,
-    width = dimensions.width,
-    height = dimensions.height,
-  })
+  local filter = opts.filter or basic_filter
 
-  self.results.buffer = results.buffer
-  self.results.window = results.window
+  if not opts.events then
+    error("opts must contain events")
+  end
 
+  -- TODO: Only enable preview when needed
+  -- if opts.preview then
+  --   f.preview.enabled = true
+  --   f.previewer = opts.preview
+  -- else
+  --   f.preview_enabled = false
+  --   f.previewer = nil
+  -- end
+
+  local callback = opts.callback ~= nil
+
+  local label_str = opts.label or "> "
+
+  local last_window = api.nvim_get_current_win()
+
+  -- Create all popups needed for this finder
+  local dimensions = get_finder_dimensions()
+  local label_len = #label_str
+  local label = create_popup(0, dimensions.column, label_len, 1)
+  api.nvim_buf_set_lines(label.buffer, 0, 1, false, { label_str })
+
+  local prompt = create_popup(0, dimensions.column + label_len, dimensions.width - label_len, 1)
+  vim.cmd [[startinsert!]]
+
+  local results = create_popup(1, dimensions.column, dimensions.width, dimensions.height)
   api.nvim_win_set_option(results.window, "cursorline", true)
 
-  api.nvim_buf_set_lines(results.buffer, 0, -1, false, self.results.all)
-  self.results.length = #self.results.all
-  api.nvim_win_set_cursor(results.window, { 1, 0 })
+  local function close(cancel)
+    label.close()
+    prompt.close()
+    results.close()
+
+    if cancel then
+      api.nvim_set_current_win(last_window)
+    end
+
+    -- TODO: This is messy, is there a better way? Is it even needed
+    if api.nvim_get_mode().mode ~= "n" then
+      api.nvim_feedkeys(api.nvim_replace_termcodes("<esc>", true, true, true), "m", true)
+    end
+  end
 
   -- Ensure the prompt is the focused window and in insert mode
   api.nvim_set_current_win(prompt.window)
 
-  vim.cmd [[startinsert!]]
-
-  -- Must set keymappings and autocommands after creating all buffers
-  -- otherwise the BufLeave autocommand would trigger when creating the
-  -- results window, and then later attempts to modify the prompt window
-  -- had a chance of failing if the prompt window had already been removed.
-  self.event_map = {}
-  self:set_events(prompt.buffer)
-
-  state.finder = self
-end
-
-function Finder:open()
-  self.results.all = self.source()
-
-  local dimensions = get_finder_dimensions()
-
-  self.state.previous_window = api.nvim_get_current_win()
-  self.state.closed = false
-
-  self.prompt.query = ""
-  self:_open_popups(dimensions)
-end
-
-function Finder:_close_popup(popup)
-  if self[popup].buffer or self[popup].window then
-    if self[popup].window then api.nvim_win_close(self[popup].window, true) end
-  end
-  self[popup].buffer = nil
-  self[popup].window = nil
-end
-
-function Finder:open_preview()
-  if not self.preview.enabled then
-    return
+  local function fill_results(lines)
+    vim.schedule_wrap(function()
+      api.nvim_buf_set_lines(self.results.buffer, 0, -1, false, lines)
+      api.nvim_win_set_cursor(self.results.window, { 1, 0 })
+      self.results.length = #lines
+      self.results.lines = lines
+    end)()
   end
 
-  self.state.swapping = true
-
-  -- Close all windows
-  self:_close_popup("label")
-  self:_close_popup("prompt")
-  self:_close_popup("results")
-  self:_close_popup("preview")
-
-  local dimensions = get_finder_dimensions(true)
-
-  local preview = create_popup({
-    row = 0,
-    col = dimensions.column_preview,
-    width = dimensions.width_preview,
-    height = dimensions.height_preview,
-  })
-
-  self.preview.buffer = preview.buffer
-  self.preview.window = preview.window
-
-  api.nvim_win_set_option(preview.window, "cursorline", true)
-
-  self:_open_popups(dimensions)
-
-  self.state.swapping = false
-end
-
-function Finder:close_preview()
-  if not self.preview.enabled then
-    return
+  local function get_prompt(buffer)
+    local line = api.nvim_buf_get_lines(buffer, 0, 1, false)[1]
+    return str.trim(line)
   end
 
-  self.state.swapping = true
-
-  -- Close all windows
-  self:_close_popup("label")
-  self:_close_popup("prompt")
-  self:_close_popup("results")
-  self:_close_popup("preview")
-
-  local dimensions = get_finder_dimensions()
-  self:_open_popups(dimensions)
-
-  self.state.swapping = false
-end
-
--- Used to close the prompt and results windows if they are open.
---
--- If neither window is open then nothing will happen.
---
--- Will also switch to normal mode if in insert mode.
-function Finder:close(cancel)
-  -- Swapping to a new layout will trigger autocommands so we need to keep this
-  -- from running
-  if self.state.swapping then return end
-
-  if self.state.closed then return end
-  self.state.closed = true
-
-  -- Close all windows
-  self:_close_popup("label")
-  self:_close_popup("prompt")
-  self:_close_popup("results")
-  self:_close_popup("preview")
-
-  if cancel then
-    api.nvim_set_current_win(self.state.previous_window)
+  local function search()
+    local query = get_prompt(prompt.buffer)
+    print(query)
+    -- fill_results(filter(f.results.all, query))
   end
 
-  -- TODO: This is messy, is there a better way?
-  if api.nvim_get_mode().mode ~= "n" then
-    api.nvim_feedkeys(api.nvim_replace_termcodes("<esc>", true, true, true), "m", true)
+  local default_events = {
+    { type = "keymap", key = "<esc>", fn = close},
+    { type = "keymap", key = "<c-c>", fn = close },
+    -- { type = "keymap", key = "<c-j>", fn = function() self:move_cursor('down') end },
+    -- { type = "keymap", key = "<c-k>", fn = function() self:move_cursor('up') end },
+    -- { type = "keymap", key = "<c-n>", fn = function() self:move_cursor('down') end },
+    -- { type = "keymap", key = "<c-p>", fn = function() self:move_cursor('up') end },
+    { type = "autocmd", event = "InsertLeave", fn = close },
+  }
+
+  local events = vim.tbl_extend("keep", default_events, opts.events)
+  for _, event in ipairs(events) do
+    mappings.add(prompt.buffer, event)
   end
 
-  state.finder = nil
+  api.nvim_buf_attach(prompt.buffer, false, { on_lines = search })
 end
 
-local function get_prompt(buffer)
-  local line = api.nvim_buf_get_lines(buffer, 0, 1, false)[1]
-  return str.trim(line)
-end
-
-function Finder:fill_results(lines)
-  vim.schedule_wrap(function()
-    api.nvim_buf_set_lines(self.results.buffer, 0, -1, false, lines)
-    api.nvim_win_set_cursor(self.results.window, { 1, 0 })
-    self.results.length = #lines
-    self.results.lines = lines
-  end)()
-end
-
-function Finder:search()
-  local query = get_prompt(self.prompt.buffer)
-  self.prompt.query = query
-
-  if self.callback then
-    self.filter(self.results.all, query, function(lines) self:fill_results(lines) end)
-  else
-    self.results.filtered = self.filter(self.results.all, query)
-    self:fill_results(self.results.filtered)
-  end
-end
-
-function Finder:move_cursor(direction)
+local function move_cursor(direction)
   local cursor = api.nvim_win_get_cursor(self.results.window)
   local length = self.results.length
 
@@ -451,7 +210,7 @@ function Finder:move_cursor(direction)
 end
 
 -- Run the event on the current row
-function Finder:select(callback)
+local function select(callback)
   local row = api.nvim_win_get_cursor(self.results.window)[1]
   local selected = api.nvim_buf_get_lines(self.results.buffer, row - 1, row, false)[1]
 
@@ -465,7 +224,5 @@ function Finder:select(callback)
 
   callback(selected, row)
 end
-
-finder.Finder = Finder
 
 return finder
