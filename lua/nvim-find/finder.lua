@@ -203,7 +203,6 @@ function Finder:set_events(buffer)
     { key = "<c-p>", callback = function() self:move_cursor('up') end },
     { event = "BufLeave", callback = function() self:close(true) end },
     { event = "InsertLeave", callback = function() self:close(true) end },
-    { event = "TextChangedI", callback = function() self:search() end },
   }
 
   local event_num = 1
@@ -258,6 +257,9 @@ function Finder:_open_popups(dimensions)
     api.nvim_buf_set_lines(self.prompt.buffer, 0, 1, false, { self.prompt.query })
   end
 
+  -- Register for events
+  api.nvim_buf_attach(self.prompt.buffer, false, { on_lines = function() self:search() end })
+
   local results = create_popup({
     row = 1,
     col = dimensions.column,
@@ -270,7 +272,7 @@ function Finder:_open_popups(dimensions)
 
   api.nvim_win_set_option(results.window, "cursorline", true)
 
-  api.nvim_buf_set_lines(results.buffer, 0, 0, false, self.results.all)
+  api.nvim_buf_set_lines(results.buffer, 0, -1, false, self.results.all)
   self.results.length = #self.results.all
   api.nvim_win_set_cursor(results.window, { 1, 0 })
 
@@ -397,10 +399,12 @@ local function get_prompt(buffer)
 end
 
 function Finder:fill_results(lines)
-  api.nvim_buf_set_lines(self.results.buffer, 0, self.results.length, false, lines)
-  api.nvim_win_set_cursor(self.results.window, { 1, 0 })
-  self.results.length = #lines
-  self.results.lines = lines
+  vim.schedule_wrap(function()
+    api.nvim_buf_set_lines(self.results.buffer, 0, -1, false, lines)
+    api.nvim_win_set_cursor(self.results.window, { 1, 0 })
+    self.results.length = #lines
+    self.results.lines = lines
+  end)()
 end
 
 function Finder:search()
