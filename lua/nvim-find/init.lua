@@ -1,12 +1,9 @@
+-- nvim-find: A fast, simple, async finder plugin
+
 local async = require("nvim-find.async")
 local config = require("nvim-find.config")
-local fd = require("nvim-find.sources.fd")
-local file = require("nvim-find.filters.file")
 local mappings = require("nvim-find.mappings")
 local str = require("nvim-find.string-utils")
-
--- local find_search = require("nvim-find.defaults.search")
--- local find_buffer = require("nvim-find.defaults.buffers")
 
 local find = {}
 
@@ -155,6 +152,7 @@ function find.create(opts)
     api.nvim_command("redraw!")
   end
 
+  -- TODO: These default events are hard coded for file opening
   local default_events = {
     { type = "keymap", key = "<esc>", fn = close },
     { type = "keymap", key = "<c-c>", fn = close },
@@ -226,6 +224,10 @@ function find.create(opts)
   api.nvim_set_current_win(prompt.window)
 end
 
+local cache = require("nvim-find.filters.cache")
+local fd = require("nvim-find.sources.fd")
+local file = require("nvim-find.filters.file")
+
 -- User configuration
 find.setup = config.setup
 
@@ -233,16 +235,10 @@ find.setup = config.setup
 -- Default file finder
 function find.files()
   find.create({
-    source = file.run(fd.run),
+    source = file.run(cache.run(fd.run)),
     -- source = fd.run,
     events = {}
   })
 end
-
--- Default buffer finder
--- find.buffers = find_buffer.open
-
--- Default search (ripgrep) finder
--- find.search = find_search.open
 
 return find

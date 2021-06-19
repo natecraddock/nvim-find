@@ -1,10 +1,10 @@
 -- A simple string matching filter
+
 local async = require("nvim-find.async")
 
 local simple = {}
 
 function simple.run(source)
-  -- TODO: Figure out data here
   return function(finder)
     for results in async.iterate(source, finder) do
       if type(results) == "table" then

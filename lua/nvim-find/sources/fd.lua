@@ -10,13 +10,13 @@ function fd.run(finder)
 
     if finder.is_closed() then
       close()
-      coroutine.yield(nil)
+      coroutine.yield(async.stopped)
     end
 
     -- An error occurred, cancel
     if stderr ~= "" then
       close()
-      coroutine.yield(nil)
+      coroutine.yield(async.stopped)
     end
 
     if stdout ~= "" then

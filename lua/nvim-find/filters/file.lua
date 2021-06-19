@@ -8,7 +8,7 @@ function file.run(source)
   return function(finder)
     for results in async.iterate(source, finder) do
       if finder.is_closed() then
-        coroutine.yield(nil)
+        coroutine.yield(async.stopped)
       end
       if type(results) == "table" then
         coroutine.yield(vim.tbl_filter(
