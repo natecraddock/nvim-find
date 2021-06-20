@@ -228,6 +228,7 @@ local buffers = require("nvim-find.sources.buffers")
 local cache = require("nvim-find.filters.cache")
 local fd = require("nvim-find.sources.fd")
 local file = require("nvim-find.filters.file")
+local rg = require("nvim-find.sources.rg")
 local simple = require("nvim-find.filters.simple")
 
 -- User configuration
@@ -244,6 +245,13 @@ end
 function find.buffers()
   find.create({
     source = simple.run(buffers.run),
+    events = {},
+  })
+end
+
+function find.search()
+  find.create({
+    source = rg.run,
     events = {},
   })
 end
