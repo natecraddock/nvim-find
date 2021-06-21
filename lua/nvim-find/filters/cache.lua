@@ -1,4 +1,4 @@
--- A filter that caches the results of it's source so later
+-- A filter that caches the results of its source so later
 -- iterations can run quicker and potentially make fewer
 -- subprocess calls for efficiency.
 
@@ -7,16 +7,6 @@ local async = require("nvim-find.async")
 local cache = {}
 
 local buffer_size = 1000
-
-local function slice(list, first, last)
-  local l = {}
-
-  for i = first, last or #list do
-    table.insert(l, list[i])
-  end
-
-  return l
-end
 
 -- TODO: Allow passing in a table for an external cache
 -- then we could store the results of a large file find somewhere,
