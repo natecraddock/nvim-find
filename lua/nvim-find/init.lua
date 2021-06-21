@@ -1,7 +1,6 @@
 -- nvim-find: A fast, simple, async finder plugin
 
 local async = require("nvim-find.async")
-local config = require("nvim-find.config")
 local mappings = require("nvim-find.mappings")
 local str = require("nvim-find.string-utils")
 
