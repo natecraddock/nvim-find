@@ -12,7 +12,7 @@ find.setup = config.setup
 
 function defaults.files()
   find.create({
-    source = filters.file(filters.cache(sources.fd)),
+    source = filters.filename(filters.cache(sources.fd)),
     events = {},
   })
 end
