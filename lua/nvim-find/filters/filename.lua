@@ -6,18 +6,25 @@ local str = require("nvim-find.string-utils")
 
 local file = {}
 
--- TODO:
--- * ignore case
--- * ignore delimiters?
+-- TODO: ignore delimiters?
+
+local function has_upper(value)
+  return string.match(value, "%u") ~= nil
+end
 
 -- Creates a filter that uses the given query
 local function filename_filter(query)
   query = str.trim(query)
+
+  -- Should we ignore case?
+  local ignore_case = not has_upper(query)
+
   local tokens = vim.split(query, " ", true)
 
   -- Simple case when there is only one token in the query
   if #tokens == 1 then
     return function(value)
+      if ignore_case then value = value:lower() end
       local filename = path.basename(value)
       return string.find(filename, query, 0, true)
     end
@@ -26,6 +33,8 @@ local function filename_filter(query)
   -- When there are more tokens after the first query do additional
   -- matching on the entire path
   return function(value)
+    if ignore_case then value = value:lower() end
+
     local filename = path.basename(value)
     if not string.find(filename, tokens[1], 0, true) then
       return false
@@ -37,12 +46,7 @@ local function filename_filter(query)
 
     -- A match was found, try remaining tokens on full path
     for i=2,#tokens do
-      local token = tokens[i]
-      -- This is an OR match
-      -- if string.find(value, token, 0, true) then
-      --   return true
-      -- end
-      if not string.find(value, token, 0, true) then
+      if not string.find(value, tokens[i], 0, true) then
         return false
       end
     end
