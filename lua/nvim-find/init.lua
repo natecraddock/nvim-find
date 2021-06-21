@@ -224,36 +224,4 @@ function find.create(opts)
   api.nvim_set_current_win(prompt.window)
 end
 
-local buffers = require("nvim-find.sources.buffers")
-local cache = require("nvim-find.filters.cache")
-local fd = require("nvim-find.sources.fd")
-local file = require("nvim-find.filters.file")
-local rg = require("nvim-find.sources.rg")
-local simple = require("nvim-find.filters.simple")
-
--- User configuration
-find.setup = config.setup
-
--- TODO: move defaults to their own file?
-function find.files()
-  find.create({
-    source = file.run(cache.run(fd.run)),
-    events = {},
-  })
-end
-
-function find.buffers()
-  find.create({
-    source = simple.run(buffers.run),
-    events = {},
-  })
-end
-
-function find.search()
-  find.create({
-    source = rg.run,
-    events = {},
-  })
-end
-
 return find
