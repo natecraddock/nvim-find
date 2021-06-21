@@ -40,7 +40,7 @@ function cache.run(source)
 
       local index = 1
 
-      -- TODO: Extract into general purpose buffer filter
+      -- TODO: Extract into general purpose buffer filter?
       while index < #c do
         local e = math.min(#c, index + buffer_size)
         coroutine.yield({unpack(c, index, e)})
@@ -49,16 +49,6 @@ function cache.run(source)
     else
       for results in async.iterate(source, finder, true) do
         if results == async.completed then coroutine.yield({}) end
-
-        -- TODO: This is part of EVERY filter and that's bad
-        if finder.is_closed() then
-          coroutine.yield(async.stopped)
-        end
-
-        if results == async.stopped then
-          coroutine.yield(async.stopped)
-          -- return async.canceled
-        end
 
         for _, val in ipairs(results) do
           table.insert(c, val)

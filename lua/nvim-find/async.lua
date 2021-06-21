@@ -25,6 +25,10 @@ end
 local function resume(thread, finder, notify, value)
     local _, result = coroutine.resume(thread, finder, value)
 
+    if finder.is_closed() or result == async.stopped then
+      return async.stopped
+    end
+
     if type(result) == "function" then
       return resume(thread, finder, notify, async.wait(result))
     end

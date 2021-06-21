@@ -1,4 +1,5 @@
 -- A filter designed to be particularly good at filename matching
+
 local async = require("nvim-find.async")
 
 local file = {}
@@ -7,9 +8,6 @@ local file = {}
 function file.run(source)
   return function(finder)
     for results in async.iterate(source, finder) do
-      if finder.is_closed() then
-        coroutine.yield(async.stopped)
-      end
       if type(results) == "table" then
         coroutine.yield(vim.tbl_filter(
           function(value)
