@@ -108,6 +108,9 @@ function find.create(opts)
   local results = create_popup(1, dimensions.column, dimensions.width, dimensions.height)
   api.nvim_win_set_option(results.window, "cursorline", true)
 
+  results.scroll = 1
+  results.lines = {}
+
   local function close()
     open = false
 
@@ -120,6 +123,14 @@ function find.create(opts)
     api.nvim_command("stopinsert")
   end
 
+  -- Fill the results buffer with the lines visible at the current cursor and scroll offsets
+  local function fill_results(lines)
+    if not open then return end
+
+    local partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
+    api.nvim_buf_set_lines(results.buffer, 0, -1, false, partial_lines)
+  end
+
   local function choose(command)
     command = command or "edit"
 
@@ -127,6 +138,7 @@ function find.create(opts)
     local selected = api.nvim_buf_get_lines(results.buffer, row - 1, row, false)[1]
 
     close()
+
     -- Nothing was selected so just close
     if selected == "" then
       return
@@ -139,16 +151,26 @@ function find.create(opts)
 
   local function move_cursor(direction)
     local cursor = api.nvim_win_get_cursor(results.window)
-    local length = dimensions.height
+    local length = #results.lines
 
-    if direction == "up" and cursor[1] > 1 then
-      cursor[1] = cursor[1] - 1
-    elseif direction == "down" and cursor[1] < length then
-      cursor[1] = cursor[1] + 1
+    if direction == "up" then
+      if cursor[1] > 1 then
+        cursor[1] = cursor[1] - 1
+      elseif results.scroll > 1 then
+        results.scroll = results.scroll - 1
+      end
+    elseif direction == "down" then
+      if cursor[1] < dimensions.height then
+        cursor[1] = cursor[1] + 1
+      elseif results.scroll <= length - dimensions.height then
+        results.scroll = results.scroll + 1
+      end
     end
 
     api.nvim_win_set_cursor(results.window, cursor)
-    api.nvim_command("redraw!")
+
+    -- Always redraw the lines to force a window redraw
+    fill_results(results.lines)
   end
 
   -- TODO: These default events are hard coded for file opening
@@ -168,6 +190,7 @@ function find.create(opts)
     { type = "keymap", key = "<c-p>", fn = function() move_cursor("up") end },
   }
 
+  -- BUG: fails if opts.events doesn't exist
   local events = vim.tbl_extend("keep", default_events, opts.events)
   for _, event in ipairs(events) do
     mappings.add(prompt.buffer, event)
@@ -179,7 +202,11 @@ function find.create(opts)
   end
 
   local function prompt_changed()
-    local lines = {}
+    -- Reset the cursor and scroll offset
+    api.nvim_win_set_cursor(results.window, { 1, 0 })
+    results.scroll = 1
+    results.lines = {}
+
     last_query = get_prompt(prompt.buffer)
 
     -- Stores info on the current finder
@@ -191,21 +218,14 @@ function find.create(opts)
       return not open or (finder.query ~= last_query)
     end
 
-    -- TODO: This is too simple
-    local function on_value(tbl)
-      for _, val in ipairs(tbl) do
+    local function on_value(value)
+      for _, val in ipairs(value) do
         if val and val ~= "" then
-          table.insert(lines, val)
+          table.insert(results.lines, val)
         end
       end
       vim.schedule(function()
-        if not open then return end
-        local partial ={}
-        for _, val in ipairs(lines) do
-          table.insert(partial, val)
-          if #partial == dimensions.height then break end
-        end
-        api.nvim_buf_set_lines(results.buffer, 0, -1, false, partial)
+        fill_results(results.lines)
       end)
     end
 
