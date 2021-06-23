@@ -26,9 +26,8 @@ local file_source = nil
 function defaults.files()
   if not file_source then
     file_source = get_best_file_source()
+    file_source = filters.wrap(file_source)
   end
-
-  file_source = filters.wrap(file_source)
 
   find.create({
     source = filters.sort(filters.filename(filters.cache(file_source))),
