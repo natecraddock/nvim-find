@@ -1,8 +1,7 @@
 -- A filter designed to be particularly good at filename matching
 
 local async = require("nvim-find.async")
-local path = require("nvim-find.path")
-local str = require("nvim-find.string-utils")
+local utils = require("nvim-find.utils")
 
 local file = {}
 
@@ -17,7 +16,7 @@ end
 
 -- Creates a filter that uses the given query
 local function filename_filter(query, ignore_case, ignore_delimiters)
-  query = str.trim(query)
+  query = utils.str.trim(query)
 
   -- Should we ignore case?
   if ignore_case == nil then
@@ -41,7 +40,7 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
       if ignore_case then value = value:lower() end
       if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
-      local filename = path.basename(value)
+      local filename = utils.path.basename(value)
       return string.find(filename, query, 0, true)
     end
   end
@@ -54,7 +53,7 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
     if ignore_case then value = value:lower() end
     if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
-    local filename = path.basename(value)
+    local filename = utils.path.basename(value)
     if not string.find(filename, tokens[1], 0, true) then
       return false
     end

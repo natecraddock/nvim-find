@@ -2,7 +2,7 @@
 
 local async = require("nvim-find.async")
 local mappings = require("nvim-find.mappings")
-local str = require("nvim-find.string-utils")
+local utils = require("nvim-find.utils")
 
 local find = {}
 
@@ -206,7 +206,7 @@ function find.create(opts)
 
   local function get_prompt(buffer)
     local line = api.nvim_buf_get_lines(buffer, 0, 1, false)[1]
-    return str.trim(line:sub(3))
+    return utils.str.trim(line:sub(3))
   end
 
   local function prompt_changed()

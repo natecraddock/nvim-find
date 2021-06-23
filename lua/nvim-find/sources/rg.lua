@@ -2,7 +2,7 @@
 
 local async = require("nvim-find.async")
 local job = require("nvim-find.job")
-local str = require("nvim-find.string-utils")
+local utils = require("nvim-find.utils")
 
 local rg = {}
 
@@ -20,7 +20,7 @@ local function parse_vimgrep_line(grep_line)
     path = filepath,
     row = tonumber(row),
     col = tonumber(column),
-    result = str.trim(match),
+    result = utils.str.trim(match),
   }
 end
 

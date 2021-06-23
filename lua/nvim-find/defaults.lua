@@ -48,4 +48,11 @@ function defaults.search()
   })
 end
 
+function defaults.test()
+  find.create({
+    source = filters.simple(filters.join(sources.buffers, sources.buffers)),
+    events = {},
+  })
+end
+
 return defaults
