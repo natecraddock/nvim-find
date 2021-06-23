@@ -11,6 +11,16 @@ A fast and simple finder plugin for Neovim
   * no previews
 * **Extensible:** It should be easy to create custom finders
 
+## Acknowledgements
+
+This is my first vim/neovim plugin, and first project in Lua. I have relied on
+[telescope.nvim](https://github.com/nvim-telescope/telescope.nvim),
+[plenary.nvim](https://github.com/nvim-lua/plenary.nvim),
+and [Snap](https://github.com/camspiers/snap) for help on how to interact with the neovim api, and for
+inspiration on various parts of this plugin. Thanks to all the developers for helping me get started!
+
+The async design of nvim-find is most heavily inspired by Snap.
+
 ## Included Finders
 
 For usage instructions see the [Finders](#finders) section below.
