@@ -1,5 +1,11 @@
 -- Find files in the current directory using the wonderful `fd` tool
 
+local function make_results(lines)
+  for i, line in ipairs(lines) do
+    lines[i] = { result = line }
+  end
+end
+
 local async = require("nvim-find.async")
 local job = require("nvim-find.job")
 
@@ -15,6 +21,7 @@ function fd.run(finder)
 
     if stdout ~= "" then
       local lines = vim.split(stdout:sub(1, -2), "\n", true)
+      make_results(lines)
       coroutine.yield(lines)
     else
       coroutine.yield(async.pass)

@@ -6,7 +6,7 @@ local sort = {}
 
 local function sort_by_length(to_sort)
   table.sort(to_sort, function(a, b)
-    return #a < #b
+    return #a.result < #b.result
   end)
 end
 

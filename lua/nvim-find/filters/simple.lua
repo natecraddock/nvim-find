@@ -13,6 +13,7 @@ local function simple_filter(query)
   local ignore_case = not has_upper(query)
 
   return function(value)
+    value = value.result
     if ignore_case then value = value:lower() end
     return string.find(value, query, 0, true)
   end

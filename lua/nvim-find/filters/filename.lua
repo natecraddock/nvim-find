@@ -36,6 +36,8 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
   -- Simple case when there is only one token in the query
   if #tokens == 1 then
     return function(value)
+      value = value.result
+
       if ignore_case then value = value:lower() end
       if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
@@ -47,6 +49,8 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
   -- When there are more tokens after the first query do additional
   -- matching on the entire path
   return function(value)
+    value = value.result
+
     if ignore_case then value = value:lower() end
     if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
