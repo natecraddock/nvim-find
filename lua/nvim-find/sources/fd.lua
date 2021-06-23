@@ -5,12 +5,6 @@ local job = require("nvim-find.job")
 
 local fd = {}
 
-local function make_results(lines)
-  for i, line in ipairs(lines) do
-    lines[i] = { result = line }
-  end
-end
-
 function fd.run(finder)
   for stdout, stderr, close in job.spawn("fd", {"-t", "f"}) do
 
@@ -21,7 +15,6 @@ function fd.run(finder)
 
     if stdout ~= "" then
       local lines = vim.split(stdout:sub(1, -2), "\n", true)
-      make_results(lines)
       coroutine.yield(lines)
     else
       coroutine.yield(async.pass)

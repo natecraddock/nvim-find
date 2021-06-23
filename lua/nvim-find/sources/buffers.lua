@@ -21,7 +21,7 @@ local function get_buffer_list()
   local bufs = api.nvim_list_bufs()
   for _, b in ipairs(bufs) do
     if buffer_filter(b) then
-      table.insert(results, { result = vim.fn.bufname(b) })
+      table.insert(results, vim.fn.bufname(b))
     end
   end
   return results

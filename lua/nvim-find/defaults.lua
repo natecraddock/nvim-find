@@ -3,6 +3,7 @@
 local filters = require("nvim-find.filters")
 local find = require("nvim-find")
 local sources = require("nvim-find.sources")
+local utils = require("nvim-find.utils")
 
 local defaults = {}
 
@@ -28,6 +29,8 @@ function defaults.files()
     file_source = get_best_file_source()
   end
 
+  file_source = filters.wrap(file_source)
+
   find.create({
     source = filters.sort(filters.filename(filters.cache(file_source))),
     events = {},
@@ -36,14 +39,24 @@ end
 
 function defaults.buffers()
   find.create({
-    source = filters.simple(sources.buffers),
+    source = filters.simple(filters.wrap(sources.buffers)),
     events = {},
   })
 end
 
+local function vimgrep(line)
+  local filepath, row, col, match = string.match(line, "(.-):(.-):(.-):(.*)")
+  return {
+    path = filepath,
+    line = row,
+    col = col,
+    result = utils.str.trim(match),
+  }
+end
+
 function defaults.search()
   find.create({
-    source = sources.rg_grep,
+    source = filters.wrap(sources.rg_grep, vimgrep),
     events = {},
   })
 end
