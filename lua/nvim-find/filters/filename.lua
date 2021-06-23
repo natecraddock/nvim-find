@@ -6,25 +6,39 @@ local str = require("nvim-find.string-utils")
 
 local file = {}
 
--- TODO: ignore delimiters?
-
 local function has_upper(value)
   return string.match(value, "%u") ~= nil
 end
 
+local DELIMITERS = "[-_.]"
+local function has_delimiters(value)
+  return string.match(value, DELIMITERS) ~= nil
+end
+
 -- Creates a filter that uses the given query
-local function filename_filter(query)
+local function filename_filter(query, ignore_case, ignore_delimiters)
   query = str.trim(query)
 
   -- Should we ignore case?
-  local ignore_case = not has_upper(query)
+  if ignore_case == nil then
+    ignore_case = not has_upper(query)
+  end
+
+  -- Should we ignore delimiters?
+  if ignore_delimiters == nil then
+    ignore_delimiters = not has_delimiters(query)
+  end
 
   local tokens = vim.split(query, " ", true)
+
+  -- TODO: Are these cases ever actually needed? Can they be merged?
 
   -- Simple case when there is only one token in the query
   if #tokens == 1 then
     return function(value)
       if ignore_case then value = value:lower() end
+      if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
+
       local filename = path.basename(value)
       return string.find(filename, query, 0, true)
     end
@@ -34,6 +48,7 @@ local function filename_filter(query)
   -- matching on the entire path
   return function(value)
     if ignore_case then value = value:lower() end
+    if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
     local filename = path.basename(value)
     if not string.find(filename, tokens[1], 0, true) then
@@ -55,11 +70,11 @@ local function filename_filter(query)
   end
 end
 
-function file.run(source)
+function file.run(source, ignore_case, ignore_delimiters)
   return function(finder)
     for results in async.iterate(source, finder) do
       if type(results) == "table" then
-        coroutine.yield(vim.tbl_filter(filename_filter(finder.query), results))
+        coroutine.yield(vim.tbl_filter(filename_filter(finder.query, ignore_case, ignore_delimiters), results))
       else
         coroutine.yield(results)
       end
