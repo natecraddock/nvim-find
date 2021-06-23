@@ -123,20 +123,12 @@ function find.create(opts)
     api.nvim_command("stopinsert")
   end
 
-  local function map(l, fn)
-    local r = {}
-    for _, line in ipairs(l) do
-      table.insert(r, fn(line))
-    end
-    return r
-  end
-
   -- Fill the results buffer with the lines visible at the current cursor and scroll offsets
   local function fill_results(lines)
     if not open then return end
 
     local partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
-    api.nvim_buf_set_lines(results.buffer, 0, -1, false, map(partial_lines, function(v) return v.result end))
+    api.nvim_buf_set_lines(results.buffer, 0, -1, false, utils.fn.map(partial_lines, function(v) return v.result end))
   end
 
   local function choose(command)
