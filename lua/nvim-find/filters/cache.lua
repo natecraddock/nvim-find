@@ -47,7 +47,6 @@ function cache.run(source)
       end
 
       full = true
-      print("filled cache")
     end
   end
 end

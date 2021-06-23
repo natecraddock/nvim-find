@@ -36,7 +36,7 @@ local function resume(thread, finder, notify, value)
     -- The source finished iterating
     if notify and result == nil then
       coroutine.yield(async.completed)
-    elseif result == async.stopped or result == nil then
+    elseif result == async.stopped then
       coroutine.yield(async.stopped)
     end
 
