@@ -5,19 +5,29 @@ local job = require("nvim-find.job")
 
 local rg = {}
 
-function rg.run(finder)
+function rg.grep(finder)
   if finder.query == "" then
     return {}
   end
 
   for stdout, stderr, close in job.spawn("rg", {"--vimgrep", finder.query}) do
-    if finder.is_closed() then
+    if finder.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end
 
-    -- An error occurred, cancel
-    if stderr ~= "" then
+    if stdout ~= "" then
+      local lines = vim.split(stdout:sub(1, -2), "\n", true)
+      coroutine.yield(lines)
+    else
+      coroutine.yield(async.pass)
+    end
+  end
+end
+
+function rg.files(finder)
+  for stdout, stderr, close in job.spawn("rg", {"--files"}) do
+    if finder.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end

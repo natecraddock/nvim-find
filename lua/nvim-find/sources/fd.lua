@@ -8,13 +8,7 @@ local fd = {}
 function fd.run(finder)
   for stdout, stderr, close in job.spawn("fd", {"-t", "f"}) do
 
-    if finder.is_closed() then
-      close()
-      coroutine.yield(async.stopped)
-    end
-
-    -- An error occurred, cancel
-    if stderr ~= "" then
+    if finder.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end
