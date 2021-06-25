@@ -10,7 +10,7 @@ function rg.grep(finder)
     return {}
   end
 
-  for stdout, stderr, close in job.spawn("rg", {"--vimgrep", finder.query}) do
+  for stdout, stderr, close in job.spawn("rg", {"--vimgrep", "--smart-case", finder.query}) do
     if finder.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
