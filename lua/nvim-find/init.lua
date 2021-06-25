@@ -134,32 +134,41 @@ function find.create(opts)
   end
 
   local function centered_slice(data, n, w)
-    local first = n - math.floor(w / 2) - 1
-    local last = n + math.ceil(w / 2)
+    -- Line that is centered
+    local centered = math.ceil(w / 2)
+    local before = centered - 1
+    local after = centered
 
-    if first < 1 then
-      local diff = 1 - first
-      first = first + diff
-      last = last + diff
-    elseif last > #data then
-      local diff = last - #data
-      first = first - diff
-      last = last - diff
+    if n - before < 1 then
+      local diff = 1 - (n - before)
+      before = before - diff
+      after = after + diff
+    elseif n + after > #data then
+      local diff = (n + after) - #data
+      before = before + diff
+      after = after - diff
     end
 
-    return utils.fn.slice(data, first, last)
+    return utils.fn.slice(data, n - before, n + after), before + 1
   end
 
-  local fill_preview = utils.scheduled(function(data, line, path)
-    local lines = vim.split(data, "\n", true)
+  local fill_preview = utils.scheduled(function(data, line, col, path)
+    local lines = vim.split(data:sub(1, -2), "\n", true)
+
+    local highlight_line = nil
 
     if not open then return end
     if #lines > dimensions.height then
-      lines = centered_slice(lines, line, dimensions.height)
+      lines, highlight_line = centered_slice(lines, line, dimensions.height)
+    else
+      highlight_line = line
     end
 
+    highlight_line = math.max(highlight_line, 1)
+
     api.nvim_buf_set_lines(preview.buffer, 0, -1, false, lines)
-    -- api.nvim_win_set_cursor(preview.window, { line, 0 })
+
+    api.nvim_buf_add_highlight(preview.buffer, -1, "Search", highlight_line - 1, col - 1, -1)
 
     local has_treesitter = utils.try_require("nvim-treesitter")
     local _, highlight = utils.try_require("nvim-treesitter.highlight")
@@ -196,23 +205,24 @@ function find.create(opts)
   end)
 
   local buffer_cache = {}
+  local partial_lines = {}
 
   -- Fill the results buffer with the lines visible at the current cursor and scroll offsets
   local fill_results = utils.scheduled(function(lines)
     if not open then return end
 
-    local partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
+    partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
     api.nvim_buf_set_lines(results.buffer, 0, -1, false, utils.fn.map(partial_lines, function(v) return v.result end))
 
     if use_preview and #partial_lines > 0 then
       local row = api.nvim_win_get_cursor(results.window)[1]
       local selected = partial_lines[row]
       if buffer_cache[selected.path] then
-        fill_preview(buffer_cache[selected.path], selected.line, selected.path)
+        fill_preview(buffer_cache[selected.path], selected.line, selected.col, selected.path)
       else
         utils.fs.read(selected.path, function(d)
           buffer_cache[selected.path] = d
-          fill_preview(d, selected.line, selected.path)
+          fill_preview(d, selected.line, selected.col, selected.path)
         end)
       end
     elseif use_preview then
@@ -224,7 +234,7 @@ function find.create(opts)
     command = command or "edit"
 
     local row = api.nvim_win_get_cursor(results.window)[1]
-    local selected = api.nvim_buf_get_lines(results.buffer, row - 1, row, false)[1]
+    local selected = partial_lines[row]
 
     close()
 
@@ -233,9 +243,14 @@ function find.create(opts)
       return
     end
 
-    -- TODO: Allow custom callback based on the selected data
-    -- callback(selected, row)
-    api.nvim_command(string.format("%s %s", command, selected))
+    -- TODO: Allow custom callback based on the selected data?
+    if selected.line then
+      api.nvim_command(string.format("%s %s", command, selected.path))
+      local win = api.nvim_get_current_win()
+      api.nvim_win_set_cursor(win, { selected.line, selected.col })
+    else
+      api.nvim_command(string.format("%s %s", command, selected.result))
+    end
   end
 
   local function move_cursor(direction)
