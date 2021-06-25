@@ -40,7 +40,7 @@ end
 
 -- Create a new popup given a row, column, width, and height
 -- Returns the created buffer and window in a table
-local function create_popup(row, col, width, height)
+local function create_popup(row, col, width, height, border, z)
   local buffer = api.nvim_create_buf(false, true)
   api.nvim_buf_set_option(buffer, "bufhidden", "wipe")
   api.nvim_buf_set_option(buffer, "buflisted", false)
@@ -52,9 +52,12 @@ local function create_popup(row, col, width, height)
     col = col,
     width = width,
     height = height,
+    border = border,
+    zindex = z,
   }
 
   local window = api.nvim_open_win(buffer, true, opts)
+  api.nvim_win_set_option(window, "winhl", "Normal:Normal")
 
   -- Used to close the window when finished or canceled
   local close = function()
@@ -92,20 +95,24 @@ function find.create(opts)
   -- Create all popups needed for this finder
   local dimensions = get_finder_dimensions(use_preview)
 
-  local prompt = create_popup(0, dimensions.column, dimensions.width, 1)
+  local borders_prompt = {"┌", "─", "┐", "│", "┘", "─", "└", "│"}
+  local borders_results = {"├", "─", "┤", "│", "┘", "─", "└", "│"}
+  local borders_preview = {"┬", "─", "┐", "│", "┘", "─", "┴", "│"}
+
+  local prompt = create_popup(0, dimensions.column, dimensions.width, 1, borders_prompt, 1)
   -- Strangely making the buffer a prompt type will trigger the event loop
   -- but a normal buffer won't be triggered until a character is typed
   api.nvim_buf_set_option(prompt.buffer, "buftype", "prompt")
   vim.fn.prompt_setprompt(prompt.buffer, "> ")
   api.nvim_command("startinsert")
 
-  local results = create_popup(1, dimensions.column, dimensions.width, dimensions.height)
+  local results = create_popup(2, dimensions.column, dimensions.width, dimensions.height, borders_results, 10)
   api.nvim_win_set_option(results.window, "cursorline", true)
   api.nvim_win_set_option(results.window, "scrolloff", 0)
 
   local preview
   if use_preview then
-    preview = create_popup(0, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview)
+    preview = create_popup(0, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview + 1, borders_preview, 20)
   end
 
   results.scroll = 1
