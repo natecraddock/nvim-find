@@ -312,10 +312,6 @@ function find.create(opts)
     end
 
     local function on_value(value)
-      if type(value) == "string" then
-        print(value)
-        return
-      end
       for _, val in ipairs(value) do
         if val and val ~= "" then
           table.insert(results.lines, val)

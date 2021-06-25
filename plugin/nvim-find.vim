@@ -1,5 +1,5 @@
 if exists('g:loaded_nvim_find')
-	finish
+    finish
 endif
 
 let s:save_cpo = &cpo
