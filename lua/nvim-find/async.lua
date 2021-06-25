@@ -76,6 +76,7 @@ function async.loop(config)
 
   local function stop()
     uv.idle_stop(idle)
+    config.finished()
   end
 
   if finder.is_closed() then

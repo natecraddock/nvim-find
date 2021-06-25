@@ -46,8 +46,8 @@ local function vimgrep(line)
   local filepath, row, col, match = string.match(line, "(.-):(.-):(.-):(.*)")
   return {
     path = filepath,
-    line = row,
-    col = col,
+    line = tonumber(row),
+    col = tonumber(col),
     result = utils.str.trim(match),
   }
 end
@@ -56,6 +56,7 @@ function defaults.search()
   find.create({
     source = filters.wrap(sources.rg_grep, vimgrep),
     events = {},
+    preview = true,
   })
 end
 

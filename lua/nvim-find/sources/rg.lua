@@ -17,8 +17,7 @@ function rg.grep(finder)
     end
 
     if stdout ~= "" then
-      local lines = vim.split(stdout:sub(1, -2), "\n", true)
-      coroutine.yield(lines)
+      coroutine.yield({ as_string = stdout })
     else
       coroutine.yield(async.pass)
     end
@@ -33,8 +32,7 @@ function rg.files(finder)
     end
 
     if stdout ~= "" then
-      local lines = vim.split(stdout:sub(1, -2), "\n", true)
-      coroutine.yield(lines)
+      coroutine.yield({ as_string = stdout })
     else
       coroutine.yield(async.pass)
     end

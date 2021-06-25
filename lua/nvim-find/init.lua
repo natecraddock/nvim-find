@@ -9,7 +9,7 @@ local find = {}
 local api = vim.api
 
 -- TODO: Tidy up the preview window stuff
-local function get_finder_dimensions(preview_enabled)
+local function get_finder_dimensions(use_preview)
   local vim_width = api.nvim_get_option("columns")
   local vim_height = api.nvim_get_option("lines")
 
@@ -20,7 +20,7 @@ local function get_finder_dimensions(preview_enabled)
   local column_preview
   local width_preview
   local height_preview
-  if preview_enabled then
+  if use_preview then
     local w = finder_width
     finder_width = math.ceil(finder_width * 0.4)
     width_preview = w - finder_width
@@ -84,19 +84,13 @@ function find.create(opts)
   -- A source wrapped by zero or more filters
   local source = opts.source
 
-  -- TODO: Only enable preview when needed
-  -- if opts.preview then
-  --   f.preview.enabled = true
-  --   f.previewer = opts.preview
-  -- else
-  --   f.preview_enabled = false
-  --   f.previewer = nil
-  -- end
+  -- Show a preview window
+  local use_preview = opts.preview or false
 
   local last_window = api.nvim_get_current_win()
 
   -- Create all popups needed for this finder
-  local dimensions = get_finder_dimensions()
+  local dimensions = get_finder_dimensions(use_preview)
 
   local prompt = create_popup(0, dimensions.column, dimensions.width, 1)
   -- Strangely making the buffer a prompt type will trigger the event loop
@@ -107,21 +101,98 @@ function find.create(opts)
 
   local results = create_popup(1, dimensions.column, dimensions.width, dimensions.height)
   api.nvim_win_set_option(results.window, "cursorline", true)
+  api.nvim_win_set_option(results.window, "scrolloff", 0)
+
+  local preview
+  if use_preview then
+    preview = create_popup(0, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview)
+  end
 
   results.scroll = 1
   results.lines = {}
 
   local function close()
+    if not open then return end
     open = false
 
     -- Close all open popups
     prompt.close()
     results.close()
+    if preview then
+      preview.close()
+    end
 
     api.nvim_set_current_win(last_window)
-
     api.nvim_command("stopinsert")
   end
+
+  local function centered_slice(data, n, w)
+    local first = n - math.floor(w / 2) - 1
+    local last = n + math.ceil(w / 2)
+
+    if first < 1 then
+      local diff = 1 - first
+      first = first + diff
+      last = last + diff
+    elseif last > #data then
+      local diff = last - #data
+      first = first - diff
+      last = last - diff
+    end
+
+    return utils.fn.slice(data, first, last)
+  end
+
+  local function fill_preview(data, line, path)
+    local lines = vim.split(data, "\n", true)
+
+    -- TODO: only get lines that are visible
+    vim.schedule(function()
+      if not open then return end
+
+      if #lines > dimensions.height then
+        lines = centered_slice(lines, line, dimensions.height)
+      end
+
+      api.nvim_buf_set_lines(preview.buffer, 0, -1, false, lines)
+      -- api.nvim_win_set_cursor(preview.window, { line, 0 })
+
+      local has_treesitter = utils.try_require("nvim-treesitter")
+      local _, highlight = utils.try_require("nvim-treesitter.highlight")
+      local _, parsers = utils.try_require("nvim-treesitter.parsers")
+
+      -- Syntax highlight!
+      local name = vim.fn.tempname() .. utils.path.sep .. path
+
+      -- Prevent changing the window title when "saving" the buffer
+      local title = api.nvim_get_option("title")
+      api.nvim_set_option("title", false)
+      api.nvim_buf_set_name(preview.buffer, name)
+      api.nvim_set_option("title", title)
+
+      api.nvim_buf_call(preview.buffer, function()
+        local ignore = api.nvim_get_option("eventignore")
+        api.nvim_set_option("eventignore", "FileType")
+        api.nvim_command("filetype detect")
+        api.nvim_set_option("eventignore", ignore)
+      end)
+      local filetype = api.nvim_buf_get_option(preview.buffer, "filetype")
+      if filetype ~= "" then
+        if has_treesitter then
+          local language = parsers.ft_to_lang(filetype)
+          if parsers.has_parser(language) then
+            highlight.attach(preview.buffer, language)
+          else
+            api.nvim_buf_set_option(preview.buffer, "syntax", filetype)
+          end
+        else
+          api.nvim_buf_set_option(preview.buffer, "syntax", filetype)
+        end
+      end
+    end)
+  end
+
+  local buffer_cache = {}
 
   -- Fill the results buffer with the lines visible at the current cursor and scroll offsets
   local function fill_results(lines)
@@ -129,6 +200,19 @@ function find.create(opts)
 
     local partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
     api.nvim_buf_set_lines(results.buffer, 0, -1, false, utils.fn.map(partial_lines, function(v) return v.result end))
+
+    if use_preview and #partial_lines > 0 then
+      local row = api.nvim_win_get_cursor(results.window)[1]
+      local selected = partial_lines[row]
+      if buffer_cache[selected.path] then
+        fill_preview(buffer_cache[selected.path], selected.line, selected.path)
+      else
+        utils.fs.read(selected.path, function(d)
+          buffer_cache[selected.path] = d
+          fill_preview(d, selected.line, selected.path)
+        end)
+      end
+    end
   end
 
   local function choose(command)
@@ -160,7 +244,7 @@ function find.create(opts)
         results.scroll = results.scroll - 1
       end
     elseif direction == "down" then
-      if cursor[1] < dimensions.height then
+      if cursor[1] < math.min(length, dimensions.height) then
         cursor[1] = cursor[1] + 1
       elseif results.scroll <= length - dimensions.height then
         results.scroll = results.scroll + 1
@@ -178,6 +262,7 @@ function find.create(opts)
     { type = "keymap", key = "<esc>", fn = close },
     { type = "keymap", key = "<c-c>", fn = close },
     { type = "autocmd", event = "InsertLeave", fn = close },
+    { type = "autocmd", event = "BufLeave", fn = close },
 
     { type = "keymap", key = "<cr>", fn = choose },
     { type = "keymap", key = "<c-s>", fn = function() choose("split") end },
@@ -219,6 +304,10 @@ function find.create(opts)
     end
 
     local function on_value(value)
+      if type(value) == "string" then
+        print(value)
+        return
+      end
       for _, val in ipairs(value) do
         if val and val ~= "" then
           table.insert(results.lines, val)
@@ -229,11 +318,21 @@ function find.create(opts)
       end)
     end
 
+    local function finished()
+      if #results.lines == 0 then
+        -- TODO: Maybe we do need a "safedebounced"
+        vim.schedule(function()
+          fill_results({})
+        end)
+      end
+    end
+
     -- Run the event loop
     async.loop({
       finder = finder,
       source = source,
       on_value = on_value,
+      finished = finished,
     })
   end
 

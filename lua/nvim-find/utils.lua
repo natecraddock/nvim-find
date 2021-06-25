@@ -1,9 +1,18 @@
 -- General utility functions useful throughout nvim-find
 
-local utils = {}
-utils.fn = {}
-utils.path = {}
-utils.str = {}
+local uv = vim.loop
+
+local utils = {
+  fn = {},
+  path = {},
+  str = {},
+  fs = {},
+}
+
+-- attempt to require
+function utils.try_require(name)
+  return pcall(function() return require(name) end)
+end
 
 -- Thanks plenary devs!
 utils.path.sep = (function()
@@ -19,7 +28,7 @@ utils.path.sep = (function()
   end
 end)()
 
--- Functional-programming style utilities
+-- Functional-programming style utilities and other useful functions
 
 -- A map that returns a new list
 function utils.fn.map(list, fn)
@@ -35,6 +44,14 @@ function utils.fn.mutmap(list, fn)
   for i, item in ipairs(list) do
     list[i] = fn(item)
   end
+end
+
+function utils.fn.slice(list, i, j)
+  local new_list = {}
+  for index=i,j do
+    table.insert(new_list, list[index])
+  end
+  return new_list
 end
 
 -- Path related utilities
@@ -111,6 +128,20 @@ function utils.str.trim(str)
     str = str:sub(1, start - 1)
   end
   return str
+end
+
+function utils.fs.read(path, fn)
+  uv.fs_open(path, "r", 438, function(_, fd)
+    uv.fs_fstat(fd, function(_, stat)
+      -- TODO: Read this in chunks?
+      uv.fs_read(fd, stat.size, 0, function(_, data)
+        uv.fs_close(fd, function(_)
+          -- If we get here then return the data
+          return fn(data)
+        end)
+      end)
+    end)
+  end)
 end
 
 return utils
