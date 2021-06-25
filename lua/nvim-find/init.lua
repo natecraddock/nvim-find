@@ -150,59 +150,55 @@ function find.create(opts)
     return utils.fn.slice(data, first, last)
   end
 
-  local function fill_preview(data, line, path)
+  local fill_preview = utils.scheduled(function(data, line, path)
     local lines = vim.split(data, "\n", true)
 
-    -- TODO: only get lines that are visible
-    vim.schedule(function()
-      if not open then return end
+    if not open then return end
+    if #lines > dimensions.height then
+      lines = centered_slice(lines, line, dimensions.height)
+    end
 
-      if #lines > dimensions.height then
-        lines = centered_slice(lines, line, dimensions.height)
-      end
+    api.nvim_buf_set_lines(preview.buffer, 0, -1, false, lines)
+    -- api.nvim_win_set_cursor(preview.window, { line, 0 })
 
-      api.nvim_buf_set_lines(preview.buffer, 0, -1, false, lines)
-      -- api.nvim_win_set_cursor(preview.window, { line, 0 })
+    local has_treesitter = utils.try_require("nvim-treesitter")
+    local _, highlight = utils.try_require("nvim-treesitter.highlight")
+    local _, parsers = utils.try_require("nvim-treesitter.parsers")
 
-      local has_treesitter = utils.try_require("nvim-treesitter")
-      local _, highlight = utils.try_require("nvim-treesitter.highlight")
-      local _, parsers = utils.try_require("nvim-treesitter.parsers")
+    -- Syntax highlight!
+    local name = vim.fn.tempname() .. utils.path.sep .. path
 
-      -- Syntax highlight!
-      local name = vim.fn.tempname() .. utils.path.sep .. path
+    -- Prevent changing the window title when "saving" the buffer
+    local title = api.nvim_get_option("title")
+    api.nvim_set_option("title", false)
+    api.nvim_buf_set_name(preview.buffer, name)
+    api.nvim_set_option("title", title)
 
-      -- Prevent changing the window title when "saving" the buffer
-      local title = api.nvim_get_option("title")
-      api.nvim_set_option("title", false)
-      api.nvim_buf_set_name(preview.buffer, name)
-      api.nvim_set_option("title", title)
-
-      api.nvim_buf_call(preview.buffer, function()
-        local ignore = api.nvim_get_option("eventignore")
-        api.nvim_set_option("eventignore", "FileType")
-        api.nvim_command("filetype detect")
-        api.nvim_set_option("eventignore", ignore)
-      end)
-      local filetype = api.nvim_buf_get_option(preview.buffer, "filetype")
-      if filetype ~= "" then
-        if has_treesitter then
-          local language = parsers.ft_to_lang(filetype)
-          if parsers.has_parser(language) then
-            highlight.attach(preview.buffer, language)
-          else
-            api.nvim_buf_set_option(preview.buffer, "syntax", filetype)
-          end
+    api.nvim_buf_call(preview.buffer, function()
+      local ignore = api.nvim_get_option("eventignore")
+      api.nvim_set_option("eventignore", "FileType")
+      api.nvim_command("filetype detect")
+      api.nvim_set_option("eventignore", ignore)
+    end)
+    local filetype = api.nvim_buf_get_option(preview.buffer, "filetype")
+    if filetype ~= "" then
+      if has_treesitter then
+        local language = parsers.ft_to_lang(filetype)
+        if parsers.has_parser(language) then
+          highlight.attach(preview.buffer, language)
         else
           api.nvim_buf_set_option(preview.buffer, "syntax", filetype)
         end
+      else
+        api.nvim_buf_set_option(preview.buffer, "syntax", filetype)
       end
-    end)
-  end
+    end
+  end)
 
   local buffer_cache = {}
 
   -- Fill the results buffer with the lines visible at the current cursor and scroll offsets
-  local function fill_results(lines)
+  local fill_results = utils.scheduled(function(lines)
     if not open then return end
 
     local partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
@@ -219,8 +215,10 @@ function find.create(opts)
           fill_preview(d, selected.line, selected.path)
         end)
       end
+    elseif use_preview then
+      api.nvim_buf_set_lines(preview.buffer, 0, -1, false, {})
     end
-  end
+  end)
 
   local function choose(command)
     command = command or "edit"
@@ -299,6 +297,9 @@ function find.create(opts)
     results.scroll = 1
     results.lines = {}
 
+    -- clear the lines
+    fill_results({})
+
     last_query = get_prompt(prompt.buffer)
 
     -- Stores info on the current finder
@@ -320,18 +321,16 @@ function find.create(opts)
           table.insert(results.lines, val)
         end
       end
-      vim.schedule(function()
-        fill_results(results.lines)
-      end)
+      fill_results(results.lines)
     end
 
     local function finished()
-      if #results.lines == 0 then
-        -- TODO: Maybe we do need a "safedebounced"
-        vim.schedule(function()
-          fill_results({})
-        end)
-      end
+      -- TODO: Should this be removed?
+      -- if #results.lines == 0 then
+      --   vim.schedule(function()
+      --     fill_results({})
+      --   end)
+      -- end
     end
 
     -- Run the event loop

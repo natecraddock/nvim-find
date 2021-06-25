@@ -14,6 +14,29 @@ function utils.try_require(name)
   return pcall(function() return require(name) end)
 end
 
+-- wraps a function that is scheduled to run
+function utils.scheduled(fn)
+  local args_cache = nil
+  return function(...)
+    local args = { ... }
+
+    -- update args and exit if already scheduled
+    if args_cache then
+      args_cache = args
+      return
+    end
+
+    args_cache = args
+
+    vim.schedule(function()
+      fn(unpack(args_cache))
+
+      -- allow running again with updated args
+      args_cache = nil
+    end)
+  end
+end
+
 -- Thanks plenary devs!
 utils.path.sep = (function()
   if jit then
