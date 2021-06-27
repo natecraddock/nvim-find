@@ -30,21 +30,6 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
 
   local tokens = vim.split(query, " ", true)
 
-  -- TODO: Are these cases ever actually needed? Can they be merged?
-
-  -- Simple case when there is only one token in the query
-  if #tokens == 1 then
-    return function(value)
-      value = value.result
-
-      if ignore_case then value = value:lower() end
-      if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
-
-      local filename = utils.path.basename(value)
-      return string.find(filename, query, 0, true)
-    end
-  end
-
   -- When there are more tokens after the first query do additional
   -- matching on the entire path
   return function(value)
