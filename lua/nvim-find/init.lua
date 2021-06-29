@@ -334,21 +334,11 @@ function find.create(opts)
       fill_results(results.lines)
     end
 
-    local function finished()
-      -- TODO: Should this be removed?
-      -- if #results.lines == 0 then
-      --   vim.schedule(function()
-      --     fill_results({})
-      --   end)
-      -- end
-    end
-
     -- Run the event loop
     async.loop({
       finder = finder,
       source = source,
       on_value = on_value,
-      finished = finished,
     })
   end
 
