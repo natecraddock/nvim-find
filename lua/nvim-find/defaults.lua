@@ -31,6 +31,7 @@ function defaults.files()
 
   find.create({
     source = filters.sort(filters.filename(filters.cache(file_source))),
+    transient = true,
     events = {},
   })
 end
@@ -38,6 +39,7 @@ end
 function defaults.buffers()
   find.create({
     source = filters.simple(sources.buffers),
+    transient = true,
     events = {},
   })
 end

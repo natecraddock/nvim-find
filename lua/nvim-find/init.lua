@@ -70,6 +70,7 @@ local function create_popup(row, col, width, height, border, z)
 end
 
 -- Create and open a new finder
+-- TODO: Cleanup this function
 function find.create(opts)
   if not opts then
     error("opts must not be nil")
@@ -78,6 +79,10 @@ function find.create(opts)
   if not opts.source then
     error("opts must contain a source")
   end
+
+  -- Transient finders close on escape and are meant to be used for quick
+  -- searches that narrow down quickly.
+  local transient = opts.transient or false
 
   -- Tracks if the finder is running
   local open = true
@@ -277,9 +282,12 @@ function find.create(opts)
 
   -- TODO: These default events are hard coded for file opening
   local default_events = {
+    -- Always allow closing in normal mode and with ctrl-c
     { type = "keymap", key = "<esc>", fn = close },
     { type = "keymap", key = "<c-c>", fn = close },
-    { type = "autocmd", event = "InsertLeave", fn = close },
+    { type = "keymap", mode = "i", key = "<c-c>", fn = close },
+
+    -- Never allow leaving the prompt buffer
     { type = "autocmd", event = "BufLeave", fn = close },
 
     { type = "keymap", key = "<cr>", fn = choose },
@@ -287,11 +295,30 @@ function find.create(opts)
     { type = "keymap", key = "<c-v>", fn = function() choose("vsplit") end },
     { type = "keymap", key = "<c-t>", fn = function() choose("tabedit") end },
 
-    { type = "keymap", key = "<c-j>", fn = function() move_cursor("down") end },
-    { type = "keymap", key = "<c-k>", fn = function() move_cursor("up") end },
-    { type = "keymap", key = "<c-n>", fn = function() move_cursor("down") end },
-    { type = "keymap", key = "<c-p>", fn = function() move_cursor("up") end },
+    { type = "keymap", key = "j", fn = function() move_cursor("down") end },
+    { type = "keymap", key = "k", fn = function() move_cursor("up") end },
+    { type = "keymap", key = "n", fn = function() move_cursor("down") end },
+    { type = "keymap", key = "p", fn = function() move_cursor("up") end },
   }
+
+  local transient_events = {
+    { type = "keymap", mode = "i", key = "<esc>", fn = close },
+    { type = "autocmd", event = "InsertLeave", fn = close },
+
+    { type = "keymap", mode = "i", key = "<cr>", fn = choose },
+    { type = "keymap", mode = "i", key = "<c-s>", fn = function() choose("split") end },
+    { type = "keymap", mode = "i", key = "<c-v>", fn = function() choose("vsplit") end },
+    { type = "keymap", mode = "i", key = "<c-t>", fn = function() choose("tabedit") end },
+
+    { type = "keymap", mode = "i", key = "<c-j>", fn = function() move_cursor("down") end },
+    { type = "keymap", mode = "i", key = "<c-k>", fn = function() move_cursor("up") end },
+    { type = "keymap", mode = "i", key = "<c-n>", fn = function() move_cursor("down") end },
+    { type = "keymap", mode = "i", key = "<c-p>", fn = function() move_cursor("up") end },
+  }
+
+  if transient then
+    default_events = vim.tbl_extend("force", default_events, transient_events)
+  end
 
   -- BUG: fails if opts.events doesn't exist
   local events = vim.tbl_extend("keep", default_events, opts.events)
