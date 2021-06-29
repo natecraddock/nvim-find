@@ -37,7 +37,7 @@ end
 
 function defaults.buffers()
   find.create({
-    source = filters.simple(filters.wrap(sources.buffers)),
+    source = filters.simple(sources.buffers),
     events = {},
   })
 end

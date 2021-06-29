@@ -6,7 +6,7 @@ local utils = require("nvim-find.utils")
 local wrap = {}
 
 function wrap.run(source, fn)
-  fn = fn or function(result) return { result = result } end
+  fn = fn or function(result) return { result = result, path = result } end
 
   return function(finder)
     -- Store the partial contents of the last line

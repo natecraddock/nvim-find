@@ -239,17 +239,15 @@ function find.create(opts)
     close()
 
     -- Nothing was selected so just close
-    if selected == "" then
+    if #partial_lines == 0 then
       return
     end
 
     -- TODO: Allow custom callback based on the selected data?
+    api.nvim_command(string.format("%s %s", command, selected.path))
     if selected.line then
-      api.nvim_command(string.format("%s %s", command, selected.path))
       local win = api.nvim_get_current_win()
       api.nvim_win_set_cursor(win, { selected.line, selected.col })
-    else
-      api.nvim_command(string.format("%s %s", command, selected.result))
     end
   end
 
@@ -320,6 +318,7 @@ function find.create(opts)
     -- Stores info on the current finder
     local finder = {
       query = last_query,
+      last_window = last_window,
     }
 
     function finder.is_closed()
