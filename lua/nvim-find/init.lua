@@ -8,33 +8,44 @@ local find = {}
 
 local api = vim.api
 
--- TODO: Tidy up the preview window stuff
+-- The finder should be kept small and unintrusive unless a preview is shown.
+-- In that case it makes sense to take more of the available space.
 local function get_finder_dimensions(use_preview)
   local vim_width = api.nvim_get_option("columns")
   local vim_height = api.nvim_get_option("lines")
+
+  if use_preview then
+    local pad = 8
+    local finder_width = vim_width - (pad * 2)
+    local finder_height = vim_height - pad
+
+    local width_prompt = math.ceil(finder_width * 0.4)
+    local width_preview = finder_width - width_prompt
+    local column = math.ceil((vim_width - finder_width) / 2)
+
+    local column_preview = column + width_prompt
+    local height_preview = finder_height + 1
+
+    return {
+      row = 1,
+      column = column,
+      width = width_prompt,
+      height = finder_height,
+      column_preview = column_preview,
+      width_preview = width_preview,
+      height_preview = height_preview,
+    }
+  end
 
   local finder_height = math.min(20, math.ceil(vim_height / 2))
   local finder_width = math.ceil(vim_width * 0.8)
   local column = math.ceil((vim_width - finder_width) / 2)
 
-  local column_preview
-  local width_preview
-  local height_preview
-  if use_preview then
-    local w = finder_width
-    finder_width = math.ceil(finder_width * 0.4)
-    width_preview = w - finder_width
-    column_preview = column + finder_width
-    height_preview = finder_height + 1
-  end
-
   return {
+    row = 0,
     column = column,
     width = finder_width,
     height = finder_height,
-    column_preview = column_preview,
-    width_preview = width_preview,
-    height_preview = height_preview,
   }
 end
 
@@ -104,20 +115,21 @@ function find.create(opts)
   local borders_results = {"├", "─", "┤", "│", "┘", "─", "└", "│"}
   local borders_preview = {"┬", "─", "┐", "│", "┘", "─", "┴", "│"}
 
-  local prompt = create_popup(0, dimensions.column, dimensions.width, 1, borders_prompt, 1)
+
+  local prompt = create_popup(dimensions.row, dimensions.column, dimensions.width, 1, borders_prompt, 1)
   -- Strangely making the buffer a prompt type will trigger the event loop
   -- but a normal buffer won't be triggered until a character is typed
   api.nvim_buf_set_option(prompt.buffer, "buftype", "prompt")
   vim.fn.prompt_setprompt(prompt.buffer, "> ")
   api.nvim_command("startinsert")
 
-  local results = create_popup(2, dimensions.column, dimensions.width, dimensions.height, borders_results, 10)
+  local results = create_popup(dimensions.row + 2, dimensions.column, dimensions.width, dimensions.height, borders_results, 10)
   api.nvim_win_set_option(results.window, "cursorline", true)
   api.nvim_win_set_option(results.window, "scrolloff", 0)
 
   local preview
   if use_preview then
-    preview = create_popup(0, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview + 1, borders_preview, 20)
+    preview = create_popup(dimensions.row, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview + 1, borders_preview, 20)
   end
 
   results.scroll = 1
@@ -154,7 +166,7 @@ function find.create(opts)
       after = after - diff
     end
 
-    return utils.fn.slice(data, n - before, n + after), before + 1
+    return utils.fn.slice(data, n - before, n + after + 1), before + 1
   end
 
   local fill_preview = utils.scheduled(function(data, line, col, path)
@@ -294,26 +306,24 @@ function find.create(opts)
     { type = "keymap", key = "<c-s>", fn = function() choose("split") end },
     { type = "keymap", key = "<c-v>", fn = function() choose("vsplit") end },
     { type = "keymap", key = "<c-t>", fn = function() choose("tabedit") end },
-
-    { type = "keymap", key = "j", fn = function() move_cursor("down") end },
-    { type = "keymap", key = "k", fn = function() move_cursor("up") end },
-    { type = "keymap", key = "n", fn = function() move_cursor("down") end },
-    { type = "keymap", key = "p", fn = function() move_cursor("up") end },
-  }
-
-  local transient_events = {
-    { type = "keymap", mode = "i", key = "<esc>", fn = close },
-    { type = "autocmd", event = "InsertLeave", fn = close },
-
     { type = "keymap", mode = "i", key = "<cr>", fn = choose },
     { type = "keymap", mode = "i", key = "<c-s>", fn = function() choose("split") end },
     { type = "keymap", mode = "i", key = "<c-v>", fn = function() choose("vsplit") end },
     { type = "keymap", mode = "i", key = "<c-t>", fn = function() choose("tabedit") end },
 
+    { type = "keymap", key = "j", fn = function() move_cursor("down") end },
+    { type = "keymap", key = "k", fn = function() move_cursor("up") end },
+    { type = "keymap", key = "n", fn = function() move_cursor("down") end },
+    { type = "keymap", key = "p", fn = function() move_cursor("up") end },
     { type = "keymap", mode = "i", key = "<c-j>", fn = function() move_cursor("down") end },
     { type = "keymap", mode = "i", key = "<c-k>", fn = function() move_cursor("up") end },
     { type = "keymap", mode = "i", key = "<c-n>", fn = function() move_cursor("down") end },
     { type = "keymap", mode = "i", key = "<c-p>", fn = function() move_cursor("up") end },
+  }
+
+  local transient_events = {
+    { type = "keymap", mode = "i", key = "<esc>", fn = close },
+    { type = "autocmd", event = "InsertLeave", fn = close },
   }
 
   if transient then
