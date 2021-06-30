@@ -261,11 +261,15 @@ function find.create(opts)
       return
     end
 
-    -- TODO: Allow custom callback based on the selected data?
     api.nvim_command(string.format("%s %s", command, selected.path))
     if selected.line then
       local win = api.nvim_get_current_win()
       api.nvim_win_set_cursor(win, { selected.line, selected.col })
+    end
+
+    -- Custom callback
+    if opts.fn then
+      opts.fn(results.lines)
     end
   end
 

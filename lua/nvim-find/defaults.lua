@@ -54,11 +54,20 @@ local function vimgrep(line)
   }
 end
 
+local function fill_quickfix(lines)
+  local qfitems = {}
+  for _, line in ipairs(lines) do
+    table.insert(qfitems, { filename = line.path, lnum = line.line, col = line.col, text = line.result })
+  end
+  vim.fn.setqflist(qfitems)
+end
+
 function defaults.search()
   find.create({
     source = filters.wrap(sources.rg_grep, vimgrep),
     events = {},
     preview = true,
+    fn = fill_quickfix,
   })
 end
 
