@@ -8,16 +8,6 @@ A fast and simple finder plugin for Neovim
 * **Simplicity:** The finder should be unobtrusive and not distract from flow
 * **Extensible:** It should be easy to create custom finders
 
-## Acknowledgements
-
-This is my first vim/neovim plugin, and first project in Lua. I have relied on
-[telescope.nvim](https://github.com/nvim-telescope/telescope.nvim),
-[plenary.nvim](https://github.com/nvim-lua/plenary.nvim),
-and [Snap](https://github.com/camspiers/snap) for help on how to interact with the neovim api, and for
-inspiration on various parts of this plugin. Thanks to all the developers for helping me get started!
-
-The async design of nvim-find is most heavily inspired by Snap.
-
 ## Default Finders
 
 For usage instructions see the [Finders](#finders) section below.
@@ -135,7 +125,8 @@ Key | Mapping
 ## Search (`ripgrep`)
 **Non-transient**. Search files in the current working directory with ripgrep with a preview.
 
-This finder shows a preview of the match in context of the file.
+This finder shows a preview of the match in context of the file. After choosing a result the
+lines are also sent to the quickfix list for later reference.
 
 Example mapping:
 ```
@@ -155,3 +146,13 @@ Key | Mapping
 If you find a bug, have an idea for a new feature, or even write some code you want included, please
 create an issue or pull request! I would appreciate contributions. Note that plan to keep nvim-find
 simple, focused, and opinionated, so not all features will be accepted.
+
+## Acknowledgements
+
+This is my first vim/neovim plugin, and first project in Lua. I have relied on
+[telescope.nvim](https://github.com/nvim-telescope/telescope.nvim),
+[plenary.nvim](https://github.com/nvim-lua/plenary.nvim),
+and [Snap](https://github.com/camspiers/snap) for help on how to interact with the neovim api, and for
+inspiration on various parts of this plugin. Thanks to all the developers for helping me get started!
+
+The async design of nvim-find is most heavily inspired by Snap.
