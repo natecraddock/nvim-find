@@ -1,6 +1,7 @@
 -- nvim-find: A fast, simple, async finder plugin
 
 local async = require("nvim-find.async")
+local config = require("nvim-find.config")
 local mappings = require("nvim-find.mappings")
 local utils = require("nvim-find.utils")
 
@@ -37,7 +38,7 @@ local function get_finder_dimensions(use_preview)
     }
   end
 
-  local finder_height = math.min(20, math.ceil(vim_height / 2))
+  local finder_height = math.min(config.height, math.ceil(vim_height / 2))
   local finder_width = math.ceil(vim_width * 0.8)
   local column = math.ceil((vim_width - finder_width) / 2)
 
@@ -129,7 +130,7 @@ function find.create(opts)
 
   local preview
   if use_preview then
-    preview = create_popup(dimensions.row, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview + 1, borders_preview, 20)
+    preview = create_popup(dimensions.row, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview + 1, borders_preview, config.height)
   end
 
   results.scroll = 1
@@ -383,6 +384,10 @@ function find.create(opts)
 
   -- Ensure the prompt is the focused window
   api.nvim_set_current_win(prompt.window)
+end
+
+function find.setup(prefs)
+  config = vim.tbl_deep_extend("force", config, prefs)
 end
 
 return find
