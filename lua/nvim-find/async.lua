@@ -1,5 +1,7 @@
 -- Code to help the finders run asynchronously
 
+local utils = require("nvim-find.utils")
+
 local async = {}
 
 local uv = vim.loop

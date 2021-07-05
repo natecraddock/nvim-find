@@ -9,6 +9,10 @@ local utils = {
   fs = {},
 }
 
+function utils.notify(msg)
+  vim.api.nvim_echo({{ "nvim-find: " .. msg, "MsgArea" }}, true, {})
+end
+
 -- attempt to require
 function utils.try_require(name)
   return pcall(function() return require(name) end)

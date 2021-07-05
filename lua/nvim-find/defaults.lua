@@ -60,6 +60,8 @@ local function fill_quickfix(lines)
     table.insert(qfitems, { filename = line.path, lnum = line.line, col = line.col, text = line.result })
   end
   vim.fn.setqflist(qfitems)
+
+  utils.notify(string.format("%s items added to quickfix list", #qfitems))
 end
 
 function defaults.search()
