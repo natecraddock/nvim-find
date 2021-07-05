@@ -137,6 +137,7 @@ nnoremap <silent> <leader>f :lua require("nvim-find.defaults").search()<cr>
 
 Key | Mapping
 ----|--------
+<kbd>ctrl-q</kbd> (insert) or <kbd>q</kbd> (normal) | send results to the quickfix list and close
 <kbd>enter</kbd>  | open selected match in last used buffer
 <kbd>ctrl-v</kbd> | split vertically and open selected match
 <kbd>ctrl-s</kbd> | split horizontally and open selected match
