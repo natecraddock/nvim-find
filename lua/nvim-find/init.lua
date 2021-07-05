@@ -298,7 +298,7 @@ function find.create(opts)
   end
 
   -- TODO: These default events are hard coded for file opening
-  local default_events = {
+  local events = {
     -- Always allow closing in normal mode and with ctrl-c
     { type = "keymap", key = "<esc>", fn = close },
     { type = "keymap", key = "<c-c>", fn = close },
@@ -332,11 +332,32 @@ function find.create(opts)
   }
 
   if transient then
-    default_events = vim.tbl_extend("force", default_events, transient_events)
+    events = vim.tbl_extend("force", events, transient_events)
   end
 
-  -- BUG: fails if opts.events doesn't exist
-  local events = vim.tbl_extend("keep", default_events, opts.events)
+  -- User events are handled specially, and only keymaps are supported
+  if opts.events then
+    for _, event in ipairs(opts.events) do
+      -- to inform the type checker that nothing bad is happening here
+      local fn = vim.deepcopy(event.fn)
+
+      local handler = function()
+        -- close the finder if needed
+        if event.close then
+          close()
+        end
+
+        -- run the callback
+        fn(results.lines)
+      end
+
+      event.fn = handler
+      event.type = "keymap"
+    end
+
+    events = vim.tbl_extend("force", events, opts.events)
+  end
+
   for _, event in ipairs(events) do
     mappings.add(prompt.buffer, event)
   end

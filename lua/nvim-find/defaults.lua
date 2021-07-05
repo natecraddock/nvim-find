@@ -65,7 +65,8 @@ end
 function defaults.search()
   find.create({
     source = filters.wrap(sources.rg_grep, vimgrep),
-    events = {},
+    events = {{ mode = "n", key = "q", close = true, fn = fill_quickfix },
+              { mode = "i", key = "<c-q>", close = true, fn = fill_quickfix }},
     preview = true,
     fn = fill_quickfix,
   })
