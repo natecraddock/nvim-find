@@ -81,6 +81,13 @@ function utils.fn.slice(list, i, j)
   return new_list
 end
 
+-- join table b at the end of table a
+function utils.fn.mutextend(a, b)
+  for _, value in ipairs(b) do
+    table.insert(a, value)
+  end
+end
+
 -- Path related utilities
 
 -- Return the basename of a path

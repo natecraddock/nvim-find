@@ -332,7 +332,7 @@ function find.create(opts)
   }
 
   if transient then
-    events = vim.tbl_extend("force", events, transient_events)
+    utils.fn.mutextend(events, transient_events)
   end
 
   -- User events are handled specially, and only keymaps are supported
@@ -355,7 +355,7 @@ function find.create(opts)
       event.type = "keymap"
     end
 
-    events = vim.tbl_extend("force", events, opts.events)
+    utils.fn.mutextend(events, opts.events)
   end
 
   for _, event in ipairs(events) do
