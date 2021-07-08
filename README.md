@@ -41,6 +41,17 @@ use 'natecraddock/nvim-find'
 Plug 'natecraddock/nvim-find'
 ```
 
+# Configuration
+
+Access the config table by requiring `nvim-find.config`. Edit the values of the config table
+to change how nvim-find behaves. For example:
+
+```lua
+local cfg = require("nvim-find.config")
+
+cfg.height = 14 -- set max height
+```
+
 # Finders
 
 Finders are not mapped by default. Each section below indicates which function to map to enable

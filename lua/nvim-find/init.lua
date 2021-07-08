@@ -411,8 +411,4 @@ function find.create(opts)
   api.nvim_set_current_win(prompt.window)
 end
 
-function find.setup(prefs)
-  config = vim.tbl_deep_extend("force", config, prefs)
-end
-
 return find
