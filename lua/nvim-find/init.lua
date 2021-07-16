@@ -381,7 +381,7 @@ function find.create(opts)
     { type = "keymap", key = "<c-s>", fn = function() choose("split") end },
     { type = "keymap", key = "<c-v>", fn = function() choose("vsplit") end },
     { type = "keymap", key = "<c-t>", fn = function() choose("tabedit") end },
-    { type = "keymap", mode = "i", key = "<cr>", fn = choose },
+    { type = "keymap", mode = "i", key = "<cr>", str = "<esc>" },
     { type = "keymap", mode = "i", key = "<c-s>", fn = function() choose("split") end },
     { type = "keymap", mode = "i", key = "<c-v>", fn = function() choose("vsplit") end },
     { type = "keymap", mode = "i", key = "<c-t>", fn = function() choose("tabedit") end },
@@ -397,6 +397,7 @@ function find.create(opts)
   }
 
   local transient_events = {
+    { type = "keymap", mode = "i", key = "<cr>", fn = choose },
     { type = "keymap", mode = "i", key = "<esc>", fn = close },
     { type = "autocmd", event = "InsertLeave", fn = close },
   }
