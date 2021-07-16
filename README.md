@@ -165,6 +165,8 @@ nnoremap <silent> <leader>f :lua require("nvim-find.defaults").search()<cr>
 
 Key | Mapping
 ----|--------
+<kbd>gg</kbd>     | scroll to the top of the list
+<kbd>G</kbd>      | scroll to the bottom of the list
 <kdb>tab</kbd>    | open or close current group fold
 <kbd>ctrl-q</kbd> (insert) or <kbd>q</kbd> (normal) | send results to the quickfix list and close
 <kbd>enter</kbd>  | insert: switch to normal mode. normal: open selected match in last used buffer
