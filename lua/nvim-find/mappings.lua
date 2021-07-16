@@ -17,11 +17,16 @@ local function register(fn)
   return #mappings_table
 end
 
-local function register_keymap(buffer, mode, key, fn)
-  local num = register(fn)
-
+local function register_keymap(buffer, mode, key, action)
   local options = { nowait = true, silent = true, noremap = true }
-  local rhs = string.format("<cmd>:lua require('nvim-find.mappings').run(%s)<cr>", num)
+
+  local rhs = ""
+  if type(action) == "function" then
+    local num = register(action)
+    rhs = string.format("<cmd>:lua require('nvim-find.mappings').run(%s)<cr>", num)
+  else
+    rhs = action
+  end
   api.nvim_buf_set_keymap(buffer, mode, key, rhs, options)
 end
 
@@ -39,7 +44,7 @@ end
 function mappings.add(buffer, mapping)
   if mapping.type == "keymap" then
     local mode = mapping.mode or "n"
-    register_keymap(buffer, mode, mapping.key, mapping.fn)
+    register_keymap(buffer, mode, mapping.key, mapping.fn or mapping.str)
   elseif mapping.type == "autocmd" then
     register_autocmd(buffer, mapping.event, mapping.fn)
   end

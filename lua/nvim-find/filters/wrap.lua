@@ -6,7 +6,12 @@ local utils = require("nvim-find.utils")
 local wrap = {}
 
 function wrap.run(source, fn)
-  fn = fn or function(result) return { result = result, path = result } end
+  fn = fn or function(lines)
+    utils.fn.mutmap(lines, function(result)
+      return { result = result, path = result }
+    end)
+    return lines
+  end
 
   return function(finder)
     -- Store the partial contents of the last line
@@ -33,10 +38,10 @@ function wrap.run(source, fn)
 
           -- Never include the last line because it is either partial or ""
           local partial = utils.fn.slice(lines, 1, #lines - 1)
-          utils.fn.mutmap(partial, fn)
+          partial = fn(partial)
           coroutine.yield(partial)
         else
-          utils.fn.mutmap(results, fn)
+          results = fn(results)
           coroutine.yield(results)
         end
       else

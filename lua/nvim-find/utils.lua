@@ -88,6 +88,14 @@ function utils.fn.mutextend(a, b)
   end
 end
 
+function utils.fn.copy(list)
+  local new_list = {}
+  for key, value in pairs(list) do
+    new_list[key] = value
+  end
+  return new_list
+end
+
 -- Path related utilities
 
 -- Return the basename of a path

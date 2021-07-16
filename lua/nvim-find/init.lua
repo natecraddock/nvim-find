@@ -81,6 +81,25 @@ local function create_popup(row, col, width, height, border, z)
   return { buffer = buffer, window = window, close = close }
 end
 
+local function centered_slice(data, n, w)
+  -- Line that is centered
+  local centered = math.ceil(w / 2)
+  local before = centered - 1
+  local after = centered
+
+  if n - before < 1 then
+    local diff = 1 - (n - before)
+    before = before - diff
+    after = after + diff
+  elseif n + after > #data then
+    local diff = (n + after) - #data
+    before = before + diff
+    after = after - diff
+  end
+
+  return utils.fn.slice(data, n - before, n + after + 1), before + 1
+end
+
 -- Create and open a new finder
 -- TODO: Cleanup this function
 function find.create(opts)
@@ -134,7 +153,8 @@ function find.create(opts)
   end
 
   results.scroll = 1
-  results.lines = {}
+  results.all_lines = {}
+  results.display_lines = {}
 
   local function close()
     if not open then return end
@@ -149,25 +169,6 @@ function find.create(opts)
 
     api.nvim_set_current_win(last_window)
     api.nvim_command("stopinsert")
-  end
-
-  local function centered_slice(data, n, w)
-    -- Line that is centered
-    local centered = math.ceil(w / 2)
-    local before = centered - 1
-    local after = centered
-
-    if n - before < 1 then
-      local diff = 1 - (n - before)
-      before = before - diff
-      after = after + diff
-    elseif n + after > #data then
-      local diff = (n + after) - #data
-      before = before + diff
-      after = after - diff
-    end
-
-    return utils.fn.slice(data, n - before, n + after + 1), before + 1
   end
 
   local fill_preview = utils.scheduled(function(data, line, col, path)
@@ -223,18 +224,53 @@ function find.create(opts)
   end)
 
   local buffer_cache = {}
-  local partial_lines = {}
+
+  local function strip_closed()
+    local is_open = false
+    return function(line)
+      if line.open ~= nil then
+        is_open = line.open
+        return true
+      end
+      return is_open
+    end
+  end
+
+  local function format_line(line)
+    if opts.toggles then
+      -- parent row
+      if line.open ~= nil then
+        if line.open then
+          return " " .. line.result
+        else
+          return " " .. line.result
+        end
+      end
+      -- child row
+      return "│ " .. line.result
+    end
+    -- normal rows
+    return line.result
+  end
 
   -- Fill the results buffer with the lines visible at the current cursor and scroll offsets
   local fill_results = utils.scheduled(function(lines)
     if not open then return end
 
-    partial_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
-    api.nvim_buf_set_lines(results.buffer, 0, -1, false, utils.fn.map(partial_lines, function(v) return v.result end))
+    -- Start from all the lines
+    lines = lines or results.all_lines
+    if opts.toggles then
+      lines = vim.tbl_filter(strip_closed(), lines)
+    end
 
-    if use_preview and #partial_lines > 0 then
+    results.display_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
+    api.nvim_buf_set_lines(results.buffer, 0, -1, false, utils.fn.map(results.display_lines, format_line))
+
+    if use_preview and #results.display_lines > 0 then
       local row = api.nvim_win_get_cursor(results.window)[1]
-      local selected = partial_lines[row]
+      local selected = results.display_lines[row]
+      if selected.open ~= nil then return end
+
       if buffer_cache[selected.path] then
         fill_preview(buffer_cache[selected.path], selected.line, selected.col, selected.path)
       else
@@ -248,16 +284,46 @@ function find.create(opts)
     end
   end)
 
+  -- Expand/contract the current list item and redraw
+  local function toggle()
+    if not opts.toggles then return end
+
+    local row = api.nvim_win_get_cursor(results.window)[1] + results.scroll - 1
+    local selected = results.display_lines[row]
+
+    -- Find selected in all lines
+    local selected_index = 0
+    for i, line in ipairs(results.all_lines) do
+      if selected.id == line.id then
+        selected = line
+        selected_index = i
+        break
+      end
+    end
+
+    if selected then
+      while selected_index > 0 and selected.open == nil do
+        selected_index = selected_index - 1
+        row = row - 1
+        selected = results.all_lines[selected_index]
+      end
+      selected.open = not selected.open
+      -- Move cursor to parent
+      api.nvim_win_set_cursor(results.window, { row, 0 })
+      fill_results()
+    end
+  end
+
   local function choose(command)
     command = command or "edit"
 
     local row = api.nvim_win_get_cursor(results.window)[1]
-    local selected = partial_lines[row]
+    local selected = results.display_lines[row]
 
     close()
 
     -- Nothing was selected so just close
-    if #partial_lines == 0 then
+    if #results.display_lines == 0 then
       return
     end
 
@@ -269,13 +335,13 @@ function find.create(opts)
 
     -- Custom callback
     if opts.fn then
-      opts.fn(results.lines)
+      opts.fn(results.all_lines)
     end
   end
 
   local function move_cursor(direction)
     local cursor = api.nvim_win_get_cursor(results.window)
-    local length = #results.lines
+    local length = #results.display_lines
 
     if direction == "up" then
       if cursor[1] > 1 then
@@ -294,7 +360,7 @@ function find.create(opts)
     api.nvim_win_set_cursor(results.window, cursor)
 
     -- Always redraw the lines to force a window redraw
-    fill_results(results.lines)
+    fill_results()
   end
 
   -- TODO: These default events are hard coded for file opening
@@ -306,6 +372,10 @@ function find.create(opts)
 
     -- Never allow leaving the prompt buffer
     { type = "autocmd", event = "BufLeave", fn = close },
+
+    -- For toggling nested lists
+    { type = "keymap", key = "<tab>", fn = toggle },
+    { type = "keymap", mode = "i", key = "<tab>", fn = toggle },
 
     { type = "keymap", key = "<cr>", fn = choose },
     { type = "keymap", key = "<c-s>", fn = function() choose("split") end },
@@ -348,7 +418,7 @@ function find.create(opts)
         end
 
         -- run the callback
-        fn(results.lines)
+        fn(results.all_lines)
       end
 
       event.fn = handler
@@ -371,7 +441,8 @@ function find.create(opts)
     -- Reset the cursor and scroll offset
     api.nvim_win_set_cursor(results.window, { 1, 0 })
     results.scroll = 1
-    results.lines = {}
+    results.all_lines = {}
+    results.display_lines = {}
 
     -- clear the lines
     fill_results({})
@@ -388,13 +459,18 @@ function find.create(opts)
       return not open or (finder.query ~= last_query)
     end
 
+    local id = 1
     local function on_value(value)
       for _, val in ipairs(value) do
         if val and val ~= "" then
-          table.insert(results.lines, val)
+          -- store a unique id for each line for lookup between tables
+          val.id = id
+          id = id + 1
+          table.insert(results.all_lines, val)
         end
       end
-      fill_results(results.lines)
+      results.display_lines = utils.fn.copy(results.all_lines)
+      fill_results()
     end
 
     -- Run the event loop

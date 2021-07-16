@@ -23,6 +23,7 @@ end
 
 local file_source = nil
 
+-- fd or rg file picker
 function defaults.files()
   if not file_source then
     file_source = get_best_file_source()
@@ -35,6 +36,7 @@ function defaults.files()
   })
 end
 
+-- vim buffers
 function defaults.buffers()
   find.create({
     source = filters.simple(sources.buffers),
@@ -42,14 +44,27 @@ function defaults.buffers()
   })
 end
 
-local function vimgrep(line)
-  local filepath, row, col, match = string.match(line, "(.-):(.-):(.-):(.*)")
-  return {
-    path = filepath,
-    line = tonumber(row),
-    col = tonumber(col),
-    result = utils.str.trim(match),
-  }
+-- ripgrep project search
+local function vimgrep(lines)
+  local ret = {}
+  local dir = ""
+
+  for _, line in ipairs(lines) do
+    local filepath, row, col, match = string.match(line, "(.-):(.-):(.-):(.*)")
+    if dir ~= filepath then
+      table.insert(ret, { open = true, result = filepath })
+      dir = filepath
+    end
+
+    table.insert(ret, {
+      path = filepath,
+      line = tonumber(row),
+      col = tonumber(col),
+      result = utils.str.trim(match),
+    })
+  end
+
+  return ret
 end
 
 local function fill_quickfix(lines)
@@ -68,6 +83,7 @@ function defaults.search()
     events = {{ mode = "n", key = "q", close = true, fn = fill_quickfix },
               { mode = "i", key = "<c-q>", close = true, fn = fill_quickfix }},
     preview = true,
+    toggles = true,
     fn = fill_quickfix,
   })
 end
