@@ -10,10 +10,11 @@ local function sort_by_length(to_sort)
   end)
 end
 
-function sort.run(source, n)
+function sort.run(source, n, fn)
   -- Too much sorting can slow down filters
   -- Only sort at most the first 100 results by default.
   n = n or 100
+  fn = fn or sort_by_length
 
   return function(finder)
     -- Sorting requires a complete list
@@ -35,7 +36,7 @@ function sort.run(source, n)
             local second = { unpack(to_sort, n + 1) }
 
             -- Yield the first n results sorted
-            sort_by_length(first)
+            fn(first)
             coroutine.yield(first)
 
             -- If there were others iterated already, yield these too
@@ -57,7 +58,7 @@ function sort.run(source, n)
     -- If we are here and have not sorted then there were less
     -- than n total results. Sort now and return.
     if not sorted then
-      sort_by_length(to_sort)
+      fn(to_sort)
       return to_sort
     end
 

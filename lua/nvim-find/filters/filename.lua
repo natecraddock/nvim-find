@@ -16,7 +16,7 @@ local function has_delimiters(value)
 end
 
 -- Creates a filter that uses the given query
-local function filename_filter(query, ignore_case, ignore_delimiters, full_path)
+local function filename_filter(query, ignore_case, ignore_delimiters)
   -- Should we ignore case?
   if ignore_case == nil then
     ignore_case = not has_upper(query)
@@ -44,8 +44,8 @@ local function filename_filter(query, ignore_case, ignore_delimiters, full_path)
 
   -- When there are more tokens after the first query do additional
   -- matching on the entire path
-  return function(value)
-    value = value.result
+  return function(line)
+    local value = line.result
 
     -- first check if the path should be ignored
     if should_ignore(value) then return end
@@ -54,13 +54,15 @@ local function filename_filter(query, ignore_case, ignore_delimiters, full_path)
     if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
     local filename
-    if full_path then
-      filename = value
-    else
-      filename = utils.path.basename(value)
-    end
+    filename = utils.path.basename(value)
+    line.rank = 1
     if not string.find(filename, tokens[1], 0, true) then
-      return false
+      -- retry on full path
+      filename = value
+      line.rank = 0
+      if not string.find(filename, tokens[1], 0, true) then
+        return false
+      end
     end
 
     -- The hope is that the previous check will eliminate most of the matches
@@ -91,17 +93,6 @@ function file.run(source, ignore_case, ignore_delimiters)
         coroutine.yield(filtered)
       else
         coroutine.yield(results)
-      end
-    end
-
-    -- No results, fall back on full path match
-    if not had_results then
-      for results in async.iterate(source, finder) do
-        if type(results) == "table" then
-          coroutine.yield(vim.tbl_filter(filename_filter(query, ignore_case, ignore_delimiters, true), results))
-        else
-          coroutine.yield(results)
-        end
       end
     end
   end

@@ -24,6 +24,17 @@ end
 local file_source = nil
 
 -- fd or rg file picker
+
+-- sort by rank then by line length
+local function ranked_sort(to_sort)
+  table.sort(to_sort, function(a, b)
+    if a.rank == b.rank then
+      return #a.result < #b.result
+    end
+    return a.rank > b.rank
+  end)
+end
+
 function defaults.files()
   if not file_source then
     file_source = get_best_file_source()
@@ -31,7 +42,7 @@ function defaults.files()
   end
 
   find.create({
-    source = filters.sort(filters.filename(filters.cache(file_source))),
+    source = filters.sort(filters.filename(filters.cache(file_source), 100, ranked_sort)),
     transient = true,
   })
 end
