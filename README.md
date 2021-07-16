@@ -52,6 +52,22 @@ local cfg = require("nvim-find.config")
 cfg.height = 14 -- set max height
 ```
 
+## Configuration Options
+
+The available options are as follows, with their default values:
+
+```lua
+local cfg = require("nvim-find.config")
+
+-- maximum height of the finder
+cfg.height = 20
+
+-- list of ignore globs for the filename filter
+-- e.g. "*.png" will ignore any file ending in .png and
+-- "*node_modules*" ignores any path containing node_modules
+cgf.ignore = {}
+```
+
 # Finders
 
 Finders are not mapped by default. Each section below indicates which function to map to enable
