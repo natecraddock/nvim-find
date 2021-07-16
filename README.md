@@ -152,7 +152,8 @@ Key | Mapping
 ## Search (`ripgrep`)
 **Non-transient**. Search files in the current working directory with ripgrep with a preview.
 
-This finder shows a preview of the match in context of the file. After choosing a result the
+This finder shows a preview of the match in context of the file. The results are grouped by file,
+and <kbd>tab</kbd> can be used to expand or collapse a file's group. After choosing a result the
 lines are also sent to the quickfix list for later reference.
 
 Example mapping:
@@ -164,8 +165,9 @@ nnoremap <silent> <leader>f :lua require("nvim-find.defaults").search()<cr>
 
 Key | Mapping
 ----|--------
+<kdb>tab</kbd>    | open or close current group fold
 <kbd>ctrl-q</kbd> (insert) or <kbd>q</kbd> (normal) | send results to the quickfix list and close
-<kbd>enter</kbd>  | open selected match in last used buffer
+<kbd>enter</kbd>  | insert: switch to normal mode. normal: open selected match in last used buffer
 <kbd>ctrl-v</kbd> | split vertically and open selected match
 <kbd>ctrl-s</kbd> | split horizontally and open selected match
 <kbd>ctrl-t</kbd> | open selected match in a new tab
