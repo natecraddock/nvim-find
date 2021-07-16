@@ -96,6 +96,16 @@ function utils.fn.copy(list)
   return new_list
 end
 
+-- clamp within a range (inclusive)
+function utils.fn.clamp(val, a, b)
+  if val < a then
+    return a
+  elseif val > b then
+    return b
+  end
+  return val
+end
+
 -- Path related utilities
 
 -- Return the basename of a path

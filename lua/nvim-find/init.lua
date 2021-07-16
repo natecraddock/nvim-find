@@ -155,6 +155,7 @@ function find.create(opts)
   results.scroll = 1
   results.all_lines = {}
   results.display_lines = {}
+  results.open_count = 0
 
   local function close()
     if not open then return end
@@ -262,6 +263,7 @@ function find.create(opts)
     if opts.toggles then
       lines = vim.tbl_filter(strip_closed(), lines)
     end
+    results.open_count = #lines
 
     results.display_lines = { unpack(lines, results.scroll, results.scroll + dimensions.height) }
     api.nvim_buf_set_lines(results.buffer, 0, -1, false, utils.fn.map(results.display_lines, format_line))
@@ -288,7 +290,7 @@ function find.create(opts)
   local function toggle()
     if not opts.toggles then return end
 
-    local row = api.nvim_win_get_cursor(results.window)[1] + results.scroll - 1
+    local row = api.nvim_win_get_cursor(results.window)[1]
     local selected = results.display_lines[row]
 
     -- Find selected in all lines
@@ -341,7 +343,7 @@ function find.create(opts)
 
   local function move_cursor(direction)
     local cursor = api.nvim_win_get_cursor(results.window)
-    local length = #results.display_lines
+    local length = results.open_count
 
     if direction == "up" then
       if cursor[1] > 1 then
@@ -356,6 +358,9 @@ function find.create(opts)
         results.scroll = results.scroll + 1
       end
     end
+
+    -- Clamp to display lines for safety
+    cursor[1] = utils.fn.clamp(cursor[1], 1, #results.display_lines)
 
     api.nvim_win_set_cursor(results.window, cursor)
 
@@ -444,6 +449,7 @@ function find.create(opts)
     results.scroll = 1
     results.all_lines = {}
     results.display_lines = {}
+    results.open_count = 0
 
     -- clear the lines
     fill_results({})
