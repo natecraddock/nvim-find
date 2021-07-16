@@ -1,6 +1,7 @@
 -- A filter designed to be particularly good at filename matching
 
 local async = require("nvim-find.async")
+local config = require("nvim-find.config")
 local utils = require("nvim-find.utils")
 
 local file = {}
@@ -28,10 +29,26 @@ local function filename_filter(query, ignore_case, ignore_delimiters, full_path)
 
   local tokens = vim.split(query, " ", true)
 
+  local ignore_patterns = {}
+  for _, pat in ipairs(config.ignore) do
+    pat = pat:gsub("%.", "%%.")
+    pat = pat:gsub("%*", "%.%*")
+    table.insert(ignore_patterns, "^" .. pat .. "$")
+  end
+  local function should_ignore(value)
+    for _, pat in ipairs(ignore_patterns) do
+      if value:match(pat) then return true end
+    end
+    return false
+  end
+
   -- When there are more tokens after the first query do additional
   -- matching on the entire path
   return function(value)
     value = value.result
+
+    -- first check if the path should be ignored
+    if should_ignore(value) then return end
 
     if ignore_case then value = value:lower() end
     if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
