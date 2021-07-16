@@ -65,7 +65,10 @@ cfg.height = 20
 -- list of ignore globs for the filename filter
 -- e.g. "*.png" will ignore any file ending in .png and
 -- "*node_modules*" ignores any path containing node_modules
-cgf.ignore = {}
+cgf.files.ignore = {}
+
+-- start with all result groups collapsed
+cfg.search.start_closed = false
 ```
 
 # Finders

@@ -30,7 +30,7 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
   local tokens = vim.split(query, " ", true)
 
   local ignore_patterns = {}
-  for _, pat in ipairs(config.ignore) do
+  for _, pat in ipairs(config.files.ignore) do
     pat = pat:gsub("%.", "%%.")
     pat = pat:gsub("%*", "%.%*")
     table.insert(ignore_patterns, "^" .. pat .. "$")

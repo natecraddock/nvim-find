@@ -1,5 +1,6 @@
 -- Default finders
 
+local config = require("nvim-find.config")
 local filters = require("nvim-find.filters")
 local find = require("nvim-find")
 local sources = require("nvim-find.sources")
@@ -63,7 +64,7 @@ local function vimgrep(lines)
   for _, line in ipairs(lines) do
     local filepath, row, col, match = string.match(line, "(.-):(.-):(.-):(.*)")
     if dir ~= filepath then
-      table.insert(ret, { open = true, result = filepath })
+      table.insert(ret, { open = not config.search.start_closed, result = filepath })
       dir = filepath
     end
 
