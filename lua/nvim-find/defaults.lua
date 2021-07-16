@@ -70,7 +70,9 @@ end
 local function fill_quickfix(lines)
   local qfitems = {}
   for _, line in ipairs(lines) do
-    table.insert(qfitems, { filename = line.path, lnum = line.line, col = line.col, text = line.result })
+    if line.open == nil then
+      table.insert(qfitems, { filename = line.path, lnum = line.line, col = line.col, text = line.result })
+    end
   end
   vim.fn.setqflist(qfitems)
 
