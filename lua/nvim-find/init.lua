@@ -311,6 +311,10 @@ function find.create(opts)
       end
       selected.open = not selected.open
       -- Move cursor to parent
+      if row < 1 then
+        results.scroll = results.scroll + row - 1
+        row = 1
+      end
       api.nvim_win_set_cursor(results.window, { row, 0 })
       fill_results()
     end
@@ -357,6 +361,14 @@ function find.create(opts)
       elseif results.scroll <= length - dimensions.height then
         results.scroll = results.scroll + 1
       end
+    elseif direction == "top" then
+      cursor[1] = 1
+      results.scroll = 1
+    elseif direction == "bottom" then
+      cursor[1] = dimensions.height
+      if length > dimensions.height then
+        results.scroll = length - dimensions.height + 1
+      end
     end
 
     -- Clamp to display lines for safety
@@ -381,6 +393,10 @@ function find.create(opts)
     -- For toggling nested lists
     { type = "keymap", key = "<tab>", fn = toggle },
     { type = "keymap", mode = "i", key = "<tab>", fn = toggle },
+
+    -- Convenience
+    { type = "keymap", key = "gg", fn = function() move_cursor("top") end },
+    { type = "keymap", key = "G", fn = function() move_cursor("bottom") end },
 
     { type = "keymap", key = "<cr>", fn = choose },
     { type = "keymap", key = "<c-s>", fn = function() choose("split") end },
