@@ -43,7 +43,7 @@ function defaults.files()
   end
 
   find.create({
-    source = filters.sort(filters.filename(filters.cache(file_source), 100, ranked_sort)),
+    source = filters.sort(filters.filename(filters.cache(file_source)), 100, ranked_sort),
     transient = true,
   })
 end
