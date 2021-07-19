@@ -53,16 +53,16 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
     if ignore_case then value = value:lower() end
     if ignore_delimiters then value = value:gsub(DELIMITERS, "") end
 
-    local filename
-    filename = utils.path.basename(value)
+    local filename = utils.path.basename(value)
     line.rank = 1
     if not string.find(filename, tokens[1], 0, true) then
       -- retry on full path
-      filename = value
-      line.rank = 0
-      if not string.find(filename, tokens[1], 0, true) then
+      if not string.find(value, tokens[1], 0, true) then
         return false
       end
+
+      -- Did match on the full path
+      line.rank = 0
     end
 
     -- The hope is that the previous check will eliminate most of the matches
