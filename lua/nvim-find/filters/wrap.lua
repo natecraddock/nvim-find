@@ -13,11 +13,11 @@ function wrap.run(source, fn)
     return lines
   end
 
-  return function(finder)
+  return function(state)
     -- Store the partial contents of the last line
     local last_line_partial = ""
 
-    for results in async.iterate(source, finder) do
+    for results in async.iterate(source, state) do
       if type(results) == "table" then
         if results.as_string ~= nil then
           results = results.as_string

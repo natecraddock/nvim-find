@@ -81,11 +81,11 @@ local function filename_filter(query, ignore_case, ignore_delimiters)
 end
 
 function file.run(source, ignore_case, ignore_delimiters)
-  return function(finder)
-    local query = utils.str.trim(finder.query)
+  return function(state)
+    local query = utils.str.trim(state.query)
 
     local had_results = false
-    for results in async.iterate(source, finder) do
+    for results in async.iterate(source, state) do
       if type(results) == "table" then
         local filtered = vim.tbl_filter(filename_filter(query, ignore_case, ignore_delimiters), results)
         if #filtered > 0 then had_results = true end

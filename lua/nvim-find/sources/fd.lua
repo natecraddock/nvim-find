@@ -5,10 +5,10 @@ local job = require("nvim-find.job")
 
 local fd = {}
 
-function fd.run(finder)
+function fd.run(state)
   for stdout, stderr, close in job.spawn("fd", {"-t", "f"}) do
 
-    if finder.is_closed() or stderr ~= "" then
+    if state.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end

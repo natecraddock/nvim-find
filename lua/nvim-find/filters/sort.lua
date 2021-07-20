@@ -16,12 +16,12 @@ function sort.run(source, n, fn)
   n = n or 100
   fn = fn or sort_by_length
 
-  return function(finder)
+  return function(state)
     -- Sorting requires a complete list
     local to_sort = {}
     local sorted = false
 
-    for results in async.iterate(source, finder) do
+    for results in async.iterate(source, state) do
       if type(results) == "table" then
         if sorted then
           coroutine.yield(results)

@@ -472,14 +472,14 @@ function find.create(opts)
 
     last_query = get_prompt(prompt.buffer)
 
-    -- Stores info on the current finder
-    local finder = {
+    -- Stores the state of the current finder
+    local state = {
       query = last_query,
       last_window = last_window,
     }
 
-    function finder.is_closed()
-      return not open or (finder.query ~= last_query)
+    function state.is_closed()
+      return not open or (state.query ~= last_query)
     end
 
     local id = 1
@@ -498,7 +498,7 @@ function find.create(opts)
 
     -- Run the event loop
     async.loop({
-      finder = finder,
+      state = state,
       source = source,
       on_value = on_value,
     })

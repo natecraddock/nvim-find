@@ -8,9 +8,9 @@ function join.run(...)
   local sources = {...}
   assert(#sources > 1, "the join filter expects more than one source")
 
-  return function(finder)
+  return function(state)
     for _, source in ipairs(sources) do
-      for results in async.iterate(source, finder) do
+      for results in async.iterate(source, state) do
         coroutine.yield(results)
       end
     end

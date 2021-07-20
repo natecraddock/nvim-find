@@ -20,10 +20,10 @@ local function simple_filter(query)
 end
 
 function simple.run(source)
-  return function(finder)
-    for results in async.iterate(source, finder) do
+  return function(state)
+    for results in async.iterate(source, state) do
       if type(results) == "table" then
-        coroutine.yield(vim.tbl_filter(simple_filter(finder.query), results))
+        coroutine.yield(vim.tbl_filter(simple_filter(state.query), results))
       else
         -- TODO: Is this case needed? Is it handled by async.iterate already?
         coroutine.yield(results)

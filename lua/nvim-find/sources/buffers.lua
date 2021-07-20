@@ -38,14 +38,14 @@ end
 -- Assuming that the list of buffers is never more than 1000
 -- there is no need to buffer the results here. Simply returning
 -- the list should be responsive enough.
-function buffers.run(finder)
+function buffers.run(state)
   local bufs = async.wait(get_buffer_list)
 
   -- build a pretty representation
   local bufs_res = {}
   for _, buffer in ipairs(bufs) do
     local name = async.wait(function() return vim.fn.bufname(buffer) end)
-    local alternate_name = get_alternate_name(finder.last_window)
+    local alternate_name = get_alternate_name(state.last_window)
     local info = async.wait(function() return vim.fn.getbufinfo(buffer)[1] end)
 
     local modified = " "

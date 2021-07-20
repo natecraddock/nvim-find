@@ -19,7 +19,7 @@ function cache.run(source)
   -- the cache is only storing a partial set of the results!
   local full = false
 
-  return function(finder)
+  return function(state)
     -- When full the cache can be large. Returning the entire cache can be
     -- really slow for later filters, so it's best to buffer it when large.
     if full then
@@ -37,7 +37,7 @@ function cache.run(source)
         index = index + buffer_size
       end
     else
-      for results in async.iterate(source, finder, true) do
+      for results in async.iterate(source, state, true) do
         if results == async.completed then coroutine.yield({}) end
 
         for _, val in ipairs(results) do

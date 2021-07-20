@@ -5,13 +5,13 @@ local job = require("nvim-find.job")
 
 local rg = {}
 
-function rg.grep(finder)
-  if finder.query == "" then
+function rg.grep(state)
+  if state.query == "" then
     return {}
   end
 
-  for stdout, stderr, close in job.spawn("rg", {"--vimgrep", "--smart-case", finder.query}) do
-    if finder.is_closed() or stderr ~= "" then
+  for stdout, stderr, close in job.spawn("rg", {"--vimgrep", "--smart-case", state.query}) do
+    if state.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end
@@ -24,9 +24,9 @@ function rg.grep(finder)
   end
 end
 
-function rg.files(finder)
+function rg.files(state)
   for stdout, stderr, close in job.spawn("rg", {"--files"}) do
-    if finder.is_closed() or stderr ~= "" then
+    if state.is_closed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end
