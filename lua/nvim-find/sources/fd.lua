@@ -8,7 +8,7 @@ local fd = {}
 function fd.run(state)
   for stdout, stderr, close in job.spawn("fd", {"-t", "f"}) do
 
-    if state.is_closed() or stderr ~= "" then
+    if state.closed() or state.changed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end

@@ -27,7 +27,7 @@ end
 local function resume(thread, state, notify, value)
     local _, result = coroutine.resume(thread, state, value)
 
-    if state.is_closed() or result == async.stopped then
+    if state.closed() or state.changed() or result == async.stopped then
       return async.stopped
     end
 
@@ -80,7 +80,7 @@ function async.loop(config)
     uv.idle_stop(idle)
   end
 
-  if state.is_closed() then
+  if state.closed() or state.changed() then
     return
   end
 
@@ -91,7 +91,7 @@ function async.loop(config)
       -- Resume the main thread or a deeper coroutine
       local _, value = coroutine.resume(thread, state, deferred.result)
 
-        if state.is_closed() then
+        if state.closed() or state.changed() then
           stop()
         else
 

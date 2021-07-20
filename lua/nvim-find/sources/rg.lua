@@ -11,7 +11,7 @@ function rg.grep(state)
   end
 
   for stdout, stderr, close in job.spawn("rg", {"--vimgrep", "--smart-case", state.query}) do
-    if state.is_closed() or stderr ~= "" then
+    if state.closed() or state.changed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end
@@ -26,7 +26,7 @@ end
 
 function rg.files(state)
   for stdout, stderr, close in job.spawn("rg", {"--files"}) do
-    if state.is_closed() or stderr ~= "" then
+    if state.closed() or state.changed() or stderr ~= "" then
       close()
       coroutine.yield(async.stopped)
     end

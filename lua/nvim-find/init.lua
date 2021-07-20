@@ -478,8 +478,12 @@ function find.create(opts)
       last_window = last_window,
     }
 
-    function state.is_closed()
-      return not open or (state.query ~= last_query)
+    function state.closed()
+      return not open
+    end
+
+    function state.changed()
+      return state.query ~= last_query
     end
 
     local id = 1
