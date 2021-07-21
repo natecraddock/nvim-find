@@ -39,7 +39,7 @@ local function get_finder_dimensions(use_preview)
   end
 
   local finder_height = math.min(config.height, math.ceil(vim_height / 2))
-  local finder_width = math.ceil(vim_width * 0.8)
+  local finder_width = math.min(config.width, math.ceil(vim_width * 0.8))
   local column = math.ceil((vim_width - finder_width) / 2)
 
   return {

@@ -62,6 +62,9 @@ local cfg = require("nvim-find.config")
 -- maximum height of the finder
 cfg.height = 20
 
+-- maximum width of the finder
+cfg.width = 100
+
 -- list of ignore globs for the filename filter
 -- e.g. "*.png" will ignore any file ending in .png and
 -- "*node_modules*" ignores any path containing node_modules

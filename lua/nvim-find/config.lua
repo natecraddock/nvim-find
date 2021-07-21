@@ -1,6 +1,8 @@
 return {
   -- Maximum height of non-preview finders
   height = 20,
+  -- Maximum width of non-preview finders
+  width = 100,
   files = {
     -- list of ignore globs for the filename filter
     ignore = {},
