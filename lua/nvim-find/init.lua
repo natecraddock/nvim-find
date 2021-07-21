@@ -278,11 +278,11 @@ function find.create(opts)
       if selected.open ~= nil then return end
 
       if buffer_cache[selected.path] then
-        fill_preview(buffer_cache[selected.path], selected.line, selected.col, selected.path)
+        fill_preview(buffer_cache[selected.path], selected.line or 1, selected.col or 1, selected.path)
       else
         utils.fs.read(selected.path, function(d)
           buffer_cache[selected.path] = d
-          fill_preview(d, selected.line, selected.col, selected.path)
+          fill_preview(d, selected.line or 1, selected.col or 1, selected.path)
         end)
       end
     elseif use_preview then
