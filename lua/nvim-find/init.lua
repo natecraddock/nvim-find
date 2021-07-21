@@ -11,42 +11,43 @@ local api = vim.api
 
 -- The finder should be kept small and unintrusive unless a preview is shown.
 -- In that case it makes sense to take more of the available space.
-local function get_finder_dimensions(use_preview)
+local function get_finder_dimensions(layout, use_preview)
   local vim_width = api.nvim_get_option("columns")
   local vim_height = api.nvim_get_option("lines")
 
+  local row, finder_width, finder_height = (function()
+    if layout == "full" then
+      local pad = 8
+      local width = vim_width - (pad * 2)
+      local height = vim_height - pad
+      return 1, width, height
+    elseif layout == "top" then
+      local width = math.min(config.width, math.ceil(vim_width * 0.8))
+      local height = math.min(config.height, math.ceil(vim_height / 2))
+      return 0, width, height
+    end
+
+    error("Unsupported layout: " .. layout)
+  end)()
+
+  local width_prompt = finder_width
   if use_preview then
-    local pad = 8
-    local finder_width = vim_width - (pad * 2)
-    local finder_height = vim_height - pad
-
-    local width_prompt = math.ceil(finder_width * 0.4)
-    local width_preview = finder_width - width_prompt
-    local column = math.ceil((vim_width - finder_width) / 2)
-
-    local column_preview = column + width_prompt
-    local height_preview = finder_height + 1
-
-    return {
-      row = 1,
-      column = column,
-      width = width_prompt,
-      height = finder_height,
-      column_preview = column_preview,
-      width_preview = width_preview,
-      height_preview = height_preview,
-    }
+    width_prompt = math.ceil(finder_width * 0.4)
   end
+  local width_preview = finder_width - width_prompt
+  local height_preview = finder_height + 1
 
-  local finder_height = math.min(config.height, math.ceil(vim_height / 2))
-  local finder_width = math.min(config.width, math.ceil(vim_width * 0.8))
   local column = math.ceil((vim_width - finder_width) / 2)
+  local column_preview = column + width_prompt
 
   return {
-    row = 0,
+    row = row,
     column = column,
-    width = finder_width,
+    width = width_prompt,
     height = finder_height,
+    column_preview = column_preview,
+    width_preview = width_preview,
+    height_preview = height_preview,
   }
 end
 
@@ -111,6 +112,9 @@ function find.create(opts)
     error("opts must contain a source")
   end
 
+  -- the layout of the finder
+  local layout = opts.layout or "top"
+
   -- Transient finders close on escape and are meant to be used for quick
   -- searches that narrow down quickly.
   local transient = opts.transient or false
@@ -129,7 +133,7 @@ function find.create(opts)
   local last_window = api.nvim_get_current_win()
 
   -- Create all popups needed for this finder
-  local dimensions = get_finder_dimensions(use_preview)
+  local dimensions = get_finder_dimensions(layout, use_preview)
 
   local borders_prompt = {"┌", "─", "┐", "│", "┘", "─", "└", "│"}
   local borders_results = {"├", "─", "┤", "│", "┘", "─", "└", "│"}

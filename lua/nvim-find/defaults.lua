@@ -96,6 +96,7 @@ function defaults.search()
     source = filters.wrap(sources.rg_grep, vimgrep),
     events = {{ mode = "n", key = "q", close = true, fn = fill_quickfix },
               { mode = "i", key = "<c-q>", close = true, fn = fill_quickfix }},
+    layout = "full",
     preview = true,
     toggles = true,
     fn = fill_quickfix,
