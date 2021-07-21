@@ -38,7 +38,7 @@ local function get_finder_dimensions(layout, use_preview)
   local height_preview = finder_height + 1
 
   local column = math.ceil((vim_width - finder_width) / 2)
-  local column_preview = column + width_prompt
+  local column_preview = column + width_prompt + 1
 
   return {
     row = row,
@@ -109,6 +109,7 @@ function find.create(opts)
   -- Prevent opening more than one finder at a time
   if is_finder_open then return end
 
+  -- Finder config
   if not opts then
     error("opts must not be nil")
   end
@@ -144,21 +145,23 @@ function find.create(opts)
   local borders_results = {"├", "─", "┤", "│", "┘", "─", "└", "│"}
   local borders_preview = {"┬", "─", "┐", "│", "┘", "─", "┴", "│"}
 
-
-  local prompt = create_popup(dimensions.row, dimensions.column, dimensions.width, 1, borders_prompt, 1)
+  local prompt = create_popup(dimensions.row, dimensions.column,
+                              dimensions.width, 1, borders_prompt, 1)
   -- Strangely making the buffer a prompt type will trigger the event loop
   -- but a normal buffer won't be triggered until a character is typed
   api.nvim_buf_set_option(prompt.buffer, "buftype", "prompt")
   vim.fn.prompt_setprompt(prompt.buffer, "> ")
   api.nvim_command("startinsert")
 
-  local results = create_popup(dimensions.row + 2, dimensions.column, dimensions.width, dimensions.height, borders_results, 10)
+  local results = create_popup(dimensions.row + 2, dimensions.column,
+                               dimensions.width, dimensions.height, borders_results, 10)
   api.nvim_win_set_option(results.window, "cursorline", true)
   api.nvim_win_set_option(results.window, "scrolloff", 0)
 
   local preview
   if use_preview then
-    preview = create_popup(dimensions.row, dimensions.column_preview, dimensions.width_preview, dimensions.height_preview + 1, borders_preview, config.height)
+    preview = create_popup(dimensions.row, dimensions.column_preview, dimensions.width_preview,
+                           dimensions.height_preview + 1, borders_preview, 20)
   end
 
   results.scroll = 1
