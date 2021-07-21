@@ -101,9 +101,14 @@ local function centered_slice(data, n, w)
   return utils.fn.slice(data, n - before, n + after + 1), before + 1
 end
 
+local is_finder_open = false
+
 -- Create and open a new finder
 -- TODO: Cleanup this function
 function find.create(opts)
+  -- Prevent opening more than one finder at a time
+  if is_finder_open then return end
+
   if not opts then
     error("opts must not be nil")
   end
@@ -174,6 +179,8 @@ function find.create(opts)
 
     api.nvim_set_current_win(last_window)
     api.nvim_command("stopinsert")
+
+    is_finder_open = false
   end
 
   local fill_preview = utils.scheduled(function(data, line, col, path)
@@ -516,6 +523,9 @@ function find.create(opts)
 
   -- Ensure the prompt is the focused window
   api.nvim_set_current_win(prompt.window)
+
+  is_finder_open = true
+
 end
 
 return find
