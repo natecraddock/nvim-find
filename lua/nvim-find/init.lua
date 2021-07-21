@@ -357,6 +357,8 @@ function find.create(opts)
   end
 
   local function move_cursor(direction)
+    if #results.display_lines == 0 then return end
+
     local cursor = api.nvim_win_get_cursor(results.window)
     local length = results.open_count
 
