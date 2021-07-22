@@ -337,6 +337,26 @@ function find.create(opts)
     end
   end
 
+  local function toggle_all()
+    local open = true
+    for _, result in ipairs(results.all_lines) do
+      if result.open ~= nil and result.open then
+        open = false
+        break
+      end
+    end
+
+    for _, result in ipairs(results.all_lines) do
+      if result.open ~= nil then
+        result.open = open
+      end
+    end
+
+    api.nvim_win_set_cursor(results.window, { 1, 0 })
+    results.scroll = 1
+    fill_results()
+  end
+
   local function choose(command)
     command = command or "edit"
 
@@ -416,6 +436,7 @@ function find.create(opts)
     -- Convenience
     { type = "keymap", key = "gg", fn = function() move_cursor("top") end },
     { type = "keymap", key = "G", fn = function() move_cursor("bottom") end },
+    { type = "keymap", key = "o", fn = function() toggle_all() end },
 
     { type = "keymap", key = "<cr>", fn = choose },
     { type = "keymap", key = "<c-s>", fn = function() choose("split") end },
