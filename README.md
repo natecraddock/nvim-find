@@ -162,6 +162,14 @@ This finder shows a preview of the match in context of the file. The results are
 and <kbd>tab</kbd> can be used to expand or collapse a file's group. After choosing a result the
 lines are also sent to the quickfix list for later reference.
 
+### Search at cursor
+To search for the word under the cursor, an additional function is exposed
+`require("nvim-find.defaults").search_at_cursor()`.
+
+In cases where more than a single word should be searched for, the desired text can be selected
+in visual mode. Then calling `require("nvim-find.defaults").search()` will search for the selected
+text. This requires a visual mode mapping.
+
 Example mapping:
 ```
 nnoremap <silent> <leader>f :lua require("nvim-find.defaults").search()<cr>
@@ -169,11 +177,13 @@ nnoremap <silent> <leader>f :lua require("nvim-find.defaults").search()<cr>
 
 **Command:** `:NvimFindSearch`
 
+
 Key | Mapping
 ----|--------
 <kbd>gg</kbd>     | scroll to the top of the list
 <kbd>G</kbd>      | scroll to the bottom of the list
-<kdb>tab</kbd>    | open or close current group fold
+<kbd>tab</kbd>    | open or close current group fold
+<kbd>o</kbd>      | open or close all group folds (toggles)
 <kbd>ctrl-q</kbd> (insert) or <kbd>q</kbd> (normal) | send results to the quickfix list and close
 <kbd>enter</kbd>  | insert: switch to normal mode. normal: open selected match in last used buffer
 <kbd>ctrl-v</kbd> | split vertically and open selected match
