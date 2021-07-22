@@ -7,6 +7,7 @@ local utils = {
   path = {},
   str = {},
   fs = {},
+  vim = {},
 }
 
 function utils.notify(msg)
@@ -194,6 +195,25 @@ function utils.fs.read(path, fn)
       end)
     end)
   end)
+end
+
+-- Get the currently visual-selected text
+function utils.vim.visual_selection()
+  local _, line_start, col_start = unpack(vim.fn.getpos("v"))
+  local _, line_end, col_end = unpack(vim.fn.getpos("."))
+  local lines = vim.api.nvim_buf_get_lines(0, line_start - 1, line_end, false)
+  if #lines == 0 then return "" end
+
+  -- Strip chars from the beginning and end lines
+  lines[#lines] = lines[#lines]:sub(1, col_end)
+  lines[1] = lines[1]:sub(col_start)
+
+  str = ""
+  for _, line in ipairs(lines) do
+    str = str .. line
+  end
+
+  return str
 end
 
 return utils

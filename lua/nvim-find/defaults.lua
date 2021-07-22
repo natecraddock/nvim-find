@@ -91,7 +91,20 @@ local function fill_quickfix(lines)
   utils.notify(string.format("%s items added to quickfix list", #qfitems))
 end
 
-function defaults.search()
+function defaults.search(at_cursor)
+  local query = nil
+
+  -- Get initial query if needed
+  local mode = vim.fn.mode()
+  if mode == "v" or mode == "V" then
+    query = utils.vim.visual_selection()
+    -- HACK: is there an easier way to exit normal mode?
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<esc>", true, false, true), "n", true)
+  elseif at_cursor then
+    local word_at_cursor = vim.fn.expand("<cword>")
+    if word_at_cursor ~= "" then query = word_at_cursor end
+  end
+
   find.create({
     source = filters.wrap(sources.rg_grep, vimgrep),
     events = {{ mode = "n", key = "q", close = true, fn = fill_quickfix },
@@ -99,8 +112,13 @@ function defaults.search()
     layout = "full",
     preview = true,
     toggles = true,
+    query = query,
     fn = fill_quickfix,
   })
+end
+
+function defaults.search_at_cursor()
+  defaults.search(true)
 end
 
 function defaults.test()

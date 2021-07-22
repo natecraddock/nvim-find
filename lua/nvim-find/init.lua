@@ -118,6 +118,9 @@ function find.create(opts)
     error("opts must contain a source")
   end
 
+  -- The initial query passed to the finder
+  local initial_query = opts.query or nil
+
   -- the layout of the finder
   local layout = opts.layout or "top"
 
@@ -524,13 +527,26 @@ function find.create(opts)
     })
   end
 
-  api.nvim_buf_attach(prompt.buffer, false, { on_lines = prompt_changed, on_detach = function() end })
-
   -- Ensure the prompt is the focused window
   api.nvim_set_current_win(prompt.window)
 
-  is_finder_open = true
+  if initial_query then
+    -- This seems to be the only way to fill a prompt-type buffer
+    -- Save work by sending the keys before the prompt_changed callback is attached.
+    utils.scheduled(function()
+      api.nvim_feedkeys(initial_query, "i", false)
+      api.nvim_buf_attach(prompt.buffer, false, { on_lines = prompt_changed, on_detach = function() end })
 
+      -- wait a small bit before running this
+      vim.defer_fn(function()
+        api.nvim_command("stopinsert")
+      end, 50)
+    end)()
+  else
+    api.nvim_buf_attach(prompt.buffer, false, { on_lines = prompt_changed, on_detach = function() end })
+  end
+
+  is_finder_open = true
 end
 
 return find
