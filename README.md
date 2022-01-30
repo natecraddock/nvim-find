@@ -1,3 +1,25 @@
+# Notice
+
+I am no longer maintaining this plugin. To my knowledge, it still
+functions perfectly fine as a simple fuzzy finder interface for neovim.
+
+When I first wrote nvim-find, I wanted a better fuzzy-finder matching
+experience in neovim, because I'm not perfectly happy with fzf or fzy's
+algorithms. So I made this plugin.
+
+Later, after [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)
+fixed a few missing features, I realized it would be a better use of my time to
+use telescope for my fuzzy finder interface, and make my own algorithm to be
+used in telescope and in the terminal.
+
+So I have created [zf](https://github.com/natecraddock/zf) as a replacement to fzf
+and fzy, and [telescope-zf-native.nvim](https://github.com/natecraddock/telescope-zf-native.nvim)
+to integrate zf with telescope. This means I don't have to maintain a fuzzy finding
+interface _and_ a sorting algorithm.
+
+So you are welcome to use this, but I would recommend using telescope and zf
+if you want to have a filename matching algorithm similar to nvim-find.
+
 # nvim-find
 
 A fast and simple finder plugin for Neovim
